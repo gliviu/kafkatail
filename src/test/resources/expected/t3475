@@ -1,0 +1,12 @@
+topic:t3475-topic1, value:val01, partition:4
+topic:t3475-topic2, value:val02, partition:3
+topic:t3475-topic1, value:val03, partition:1
+topic:t3475-topic3, value:val04, partition:3
+topic:t3475-topic1, value:val05, partition:2
+topic:t3475-topic2, value:val06, partition:1
+topic:t3475-topic3, value:val07, partition:3
+topic:t3475-topic1, value:val08, partition:3
+topic:t3475-topic2, value:val09, partition:2
+topic:t3475-topic3, value:val10, partition:0
+topic:t3475-topic1, value:val11, partition:2
+topic:t3475-topic2, value:val12, partition:0

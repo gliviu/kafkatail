@@ -1,0 +1,81 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'jacoco'
+}
+
+repositories {
+    jcenter()
+}
+
+version = appversion
+archivesBaseName = appname
+
+test {
+    useJUnitPlatform()
+    reports.html.enabled = true
+    testLogging {
+        events "passed", "skipped", "failed"
+        afterSuite { desc, result ->
+            if (!desc.parent) { // will match the outermost suite
+                println "Results: ${result.resultType} " +
+                        "(${result.testCount} tests, " +
+                        "${result.successfulTestCount} successes, " +
+                        "${result.failedTestCount} failures, " +
+                        "${result.skippedTestCount} skipped)"
+            }
+        }
+    }
+}
+
+dependencies {
+    compile 'ch.qos.logback:logback-classic:1.2.1'
+    compile 'org.apache.kafka:kafka-clients:2.0.0'
+    compile 'org.fusesource.jansi:jansi:1.17.1'
+    compile 'net.sf.jopt-simple:jopt-simple:6.0-alpha-3'
+    compile 'com.google.code.findbugs:jsr305:3.0.2'
+
+    testCompile 'org.junit.jupiter:junit-jupiter-api:5.3.1'
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.3.1")
+    testCompile("org.assertj:assertj-core:3.11.1")
+    testCompile("org.awaitility:awaitility:3.1.6")
+    testCompile("org.apache.kafka:kafka_2.12:2.1.0")
+    testCompile("org.apache.zookeeper:zookeeper:3.4.13")
+    testCompile("org.mockito:mockito-junit-jupiter:2.24.0")
+}
+
+mainClassName = 'kt.cli.Main'
+
+task execute(type: JavaExec) {
+    main = mainClassName
+    classpath = sourceSets.main.runtimeClasspath
+}
+
+jar {
+    manifest {
+        attributes "Main-Class": mainClassName,
+                'Implementation-Title': archivesBaseName,
+                'Implementation-Version': version
+    }
+
+    from {
+        configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
+distZip {
+    archiveBaseName = appname
+    include 'kafkatail*'
+}
+
+distTar {
+    archiveBaseName = appname
+    include 'kafkatail*'
+}
+
+startScripts {
+    applicationName = appname
+    classpath = files("${appname}-${appversion}.jar")
+    unixStartScriptGenerator.template = resources.text.fromFile('src/main/scripts/kafkatail')
+    windowsStartScriptGenerator.template = resources.text.fromFile('src/main/scripts/kafkatail.bat')
+}
