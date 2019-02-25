@@ -5,13 +5,12 @@ Multi topic tail for kafka brokers.
 
 # Install
 Required
-* jdk 8+
-* gradle 5.2+
+* jdk 8
 
 ```bash
 git clone https://github.com/gliviu/kafkatail
 cd kafkatail
-gradle build
+./gradlew build
 unzip build/distributions/kafkatail-0.1.0.zip
 kafkatail-0.1.0/bin/kafkatail -v   # linux
 kafkatail-0.1.0\bin\kafkatail -v   # windows

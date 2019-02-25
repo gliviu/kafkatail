@@ -8,6 +8,10 @@ repositories {
     jcenter()
 }
 
+wrapper {
+    gradleVersion = '5.2'
+}
+
 version = appversion
 archivesBaseName = appname
 
