@@ -2,6 +2,7 @@
 # kafka-tail
 Multi topic tail for kafka brokers.
 
+[![Build Status](https://api.travis-ci.org/gliviu/kafkatail.svg?branch=master)](https://travis-ci.org/gliviu/kafkatail)
 
 # Install
 Required
