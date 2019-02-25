@@ -1,1 +1,1 @@
-windowsscript ${classpath}
+java -jar %~dp0..\\lib\\kafkatail-0.1.0.jar %*

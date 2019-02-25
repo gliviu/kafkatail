@@ -13,7 +13,8 @@ git clone https://github.com/gliviu/kafkatail
 cd kafkatail
 gradle build
 unzip build/distributions/kafkatail-0.1.0.zip
-kafkatail-0.1.0/bin/kafkatail -v
+kafkatail-0.1.0/bin/kafkatail -v   # linux
+kafkatail-0.1.0\bin\kafkatail -v   # windows
 ```
 
 # Usage
