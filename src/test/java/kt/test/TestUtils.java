@@ -92,7 +92,7 @@ public class TestUtils {
     }
 
     public static String expected(TestInfo testInfo) throws IOException, URISyntaxException {
-        URL resource = Class.class.getResource("/expected/" + testName(testInfo));
+        URL resource = TestUtils.class.getResource("/expected/" + testName(testInfo));
         if (resource == null) {
             throw new IllegalStateException("Resource missing for " + testName(testInfo));
         }

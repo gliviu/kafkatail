@@ -30,10 +30,10 @@ public class EmbeddedKafkaJunitExtension implements BeforeAllCallback, Extension
             Properties zkProperties = new Properties();
             try {
                 //load properties
-                kafkaProperties.load(Class.class.getResourceAsStream("/kafka.properties"));
+                kafkaProperties.load(EmbeddedKafkaJunitExtension.class.getResourceAsStream("/kafka.properties"));
                 Path kafkaLogDir = Files.createTempDirectory("kafka-logs");
                 kafkaProperties.setProperty("log.dirs", kafkaLogDir.toString());
-                zkProperties.load(Class.class.getResourceAsStream("/zoo.cfg"));
+                zkProperties.load(EmbeddedKafkaJunitExtension.class.getResourceAsStream("/zoo.cfg"));
                 Path zkDataDir = Files.createTempDirectory("zookeeper-data");
                 zkProperties.setProperty("dataDir", zkDataDir.toString());
 

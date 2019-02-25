@@ -5,7 +5,7 @@ Multi topic tail for kafka brokers.
 
 # Install
 Required
-* jdk 8
+* jdk 8+
 
 ```bash
 git clone https://github.com/gliviu/kafkatail
