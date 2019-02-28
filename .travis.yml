@@ -1,12 +1,21 @@
 language: java
 os:
   - linux
+  - osx
 
 jdk:
   - oraclejdk8
   - openjdk8
   - oraclejdk11
   - openjdk11
+
+matrix:
+  exclude:
+    - os: osx
+      jdk: oraclejdk8
+    - os: osx
+      jdk: openjdk8
+
 
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
@@ -25,4 +34,5 @@ script:
   - ./gradlew nodeTest
 
 branches:
-  only: master
+  only:
+    - master
