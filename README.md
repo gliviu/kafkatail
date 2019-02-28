@@ -14,7 +14,7 @@ cd kafkatail
 ./gradlew build
 unzip build/distributions/kafkatail-0.1.0.zip
 kafkatail-0.1.0/bin/kafkatail -v   # linux
-kafkatail-0.1.0\bin\kafkatail -v   # windows
+kafkatail-0.1.0\bin\kafkatail.bat -v   # windows
 ```
 
 # Usage
