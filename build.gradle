@@ -50,6 +50,7 @@ dependencies {
 
 mainClassName = 'kt.cli.Main'
 
+// todo remove
 task execute(type: JavaExec) {
     main = mainClassName
     classpath = sourceSets.main.runtimeClasspath

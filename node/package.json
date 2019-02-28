@@ -1,0 +1,35 @@
+{
+  "name": "kafkatail",
+  "version": "0.1.0",
+  "description": "Multi topic tail for kafka brokers",
+  "main": "index.js",
+  "author": "Liviu Grigorescu",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/gliviu/kafkatail/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gliviu/kafkatail"
+  },
+  "keywords": [
+    "kafka",
+    "tail"
+  ],
+  "dependencies": {
+    "shelljs": "^0.7.5"
+  },
+  "bin": {
+    "kafkatail": "jdeploy-bundle/jdeploy.js"
+  },
+  "preferGlobal": true,
+  "jdeploy": {
+    "jar": "kafkatail-0.1.0.jar"
+  },
+  "files": [
+    "jdeploy-bundle"
+  ],
+  "scripts": {
+    "test": "./test.sh"
+  }
+}

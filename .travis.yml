@@ -17,5 +17,12 @@ cache:
     - $HOME/.gradle/caches/
     - $HOME/.gradle/wrapper/
 
+before_install:
+  - nvm install 11
+
+script:
+  - ./gradlew test
+  - ./gradlew nodeTest
+
 branches:
   only: master

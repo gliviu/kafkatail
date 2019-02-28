@@ -1,0 +1,43 @@
+repositories {
+    jcenter()
+}
+
+task assemble {
+    dependsOn(':assemble')
+    doLast {
+        copy {
+            from("$rootDir/build/libs/${appname}-${appversion}.jar")
+            into("$projectDir/jdeploy-bundle")
+        }
+    }
+}
+
+task nodeInstall {
+    dependsOn assemble
+    doLast {
+        exec {
+            if (System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('windows')) {
+                commandLine 'npm.cmd', 'install', '-g', "$projectDir"
+            } else {
+                commandLine 'npm', 'install', '-g', "$projectDir"
+            }
+        }
+    }
+}
+
+task nodeTest {
+    dependsOn nodeInstall
+    doLast {
+        exec {
+            environment("appversion", "$appversion")
+            commandLine "$projectDir/test.sh"
+        }
+    }
+}
+
+task clean {
+    doLast {
+        delete "$projectDir/jdeploy-bundle/${appname}-${appversion}.jar"
+        delete "$projectDir/node_modules"
+    }
+}
