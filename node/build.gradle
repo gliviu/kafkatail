@@ -3,6 +3,7 @@ repositories {
 }
 
 task assemble {
+    group = "node"
     dependsOn(':assemble')
     doLast {
         copy {
@@ -13,6 +14,7 @@ task assemble {
 }
 
 task nodeInstall {
+    group = "node"
     dependsOn assemble
     doLast {
         exec {
@@ -26,6 +28,7 @@ task nodeInstall {
 }
 
 task nodeTest {
+    group = "node"
     dependsOn nodeInstall
     doLast {
         exec {
@@ -36,6 +39,7 @@ task nodeTest {
 }
 
 task clean {
+    group = "node"
     doLast {
         delete "$projectDir/jdeploy-bundle/${appname}-${appversion}.jar"
         delete "$projectDir/node_modules"
