@@ -1,7 +1,7 @@
 
 # kafka-tail
-Multi topic tail for kafka brokers.
-Supports topic selction and exclusion by pattern. Tailing historical records is allowed but still experimental due to some [limitations](#notes).
+Multi topic tail for kafka brokers.  
+Supports topic selction and exclusion by pattern. Tailing historical records is allowed but still experimental due to some [limitations](#notes).  
 Building and running requires [Jdk 8+](https://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html).
 
 [![Build Status](https://api.travis-ci.org/gliviu/kafkatail.svg?branch=master)](https://travis-ci.org/gliviu/kafkatail)
@@ -10,9 +10,9 @@ Building and running requires [Jdk 8+](https://www.oracle.com/technetwork/java/j
 
 **Binary release**
 ```bash
-wget https://github.com/gliviu/kafkatail/archive/kafkatail-0.1.0.zip
-unzip kafkatail-0.1.0.zip
-kafkatail-0.1.0/bin/kafkatail -v   # or kafkatail.bat -v
+wget https://github.com/gliviu/kafkatail/archive/kafkatail-0.1.1.zip
+unzip kafkatail-0.1.1.zip
+kafkatail-0.1.1/bin/kafkatail -v   # or kafkatail.bat -v
 ```
 
 **Node**
@@ -25,8 +25,8 @@ npm install -g kafkatail    # downloads jre if needed
 git clone https://github.com/gliviu/kafkatail
 cd kafkatail
 ./gradlew build
-unzip build/distributions/kafkatail-0.1.0.zip
-kafkatail-0.1.0/bin/kafkatail -v   # or kafkatail.bat -v
+unzip build/distributions/kafkatail-0.1.1.zip
+kafkatail-0.1.1/bin/kafkatail -v   # or kafkatail.bat -v
 ```
 
 # Usage
@@ -74,7 +74,7 @@ Options -u and -a cannot be used together.
 
 # Notes
 * No consumer group is created on broker while tailing
-* Offset range options (-s, -u, -a) do not work well with records that don't have a timestamp attached.
+* Offset range options (-s, -u, -a) do not work well with records that don't have a timestamp attached.  
   Use producer starting with [0.10.0.0](https://mvnrepository.com/artifact/org.apache.kafka/kafka-clients/0.10.0.0) to benefit from these options. See [KIP-32](https://cwiki.apache.org/confluence/display/KAFKA/KIP-32+-+Add+timestamps+to+Kafka+message).
-* Offset range options (-s, -u, -a) might print records out of order if multiple partitions or topics are tailed.
+* Offset range options (-s, -u, -a) might print records out of order if multiple partitions or topics are tailed.  
   This is also true when reading new records but can generally happen when records are produces with high frequency.

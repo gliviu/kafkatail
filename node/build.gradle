@@ -10,6 +10,10 @@ task assemble {
             from("$rootDir/build/libs/${appname}-${appversion}.jar")
             into("$projectDir/jdeploy-bundle")
         }
+        copy {
+            from("$rootDir/README.md")
+            into("$projectDir")
+        }
     }
 }
 
@@ -50,7 +54,10 @@ task nodeTest {
 task clean {
     group = "node"
     doLast {
-        delete "$projectDir/jdeploy-bundle/${appname}-${appversion}.jar"
+        delete fileTree("$projectDir/jdeploy-bundle") {
+            include '*.jar'
+        }
         delete "$projectDir/node_modules"
+        delete "$projectDir/README.md"
     }
 }
