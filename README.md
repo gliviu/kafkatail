@@ -1,20 +1,32 @@
 
 # kafka-tail
 Multi topic tail for kafka brokers.
+Supports topic selction and exclusion by pattern. Tailing historical records is allowed but still experimental due to some [limitations](#notes).
+Building and running requires [Jdk 8+](https://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html).
 
 [![Build Status](https://api.travis-ci.org/gliviu/kafkatail.svg?branch=master)](https://travis-ci.org/gliviu/kafkatail)
 
 # Install
-Required
-* jdk 8+
 
+**Binary release**
+```bash
+wget https://github.com/gliviu/kafkatail/archive/kafkatail-0.1.0.zip
+unzip kafkatail-0.1.0.zip
+kafkatail-0.1.0/bin/kafkatail -v   # or kafkatail.bat -v
+```
+
+**Node**
+```bash
+npm install -g kafkatail    # downloads jre if needed
+```
+
+**From source**
 ```bash
 git clone https://github.com/gliviu/kafkatail
 cd kafkatail
 ./gradlew build
 unzip build/distributions/kafkatail-0.1.0.zip
-kafkatail-0.1.0/bin/kafkatail -v   # linux
-kafkatail-0.1.0\bin\kafkatail.bat -v   # windows
+kafkatail-0.1.0/bin/kafkatail -v   # or kafkatail.bat -v
 ```
 
 # Usage

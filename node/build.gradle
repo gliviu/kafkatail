@@ -18,10 +18,19 @@ task nodeInstall {
     dependsOn assemble
     doLast {
         exec {
+            workingDir projectDir
             if (System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('windows')) {
-                commandLine 'npm.cmd', 'install', '-g', "$projectDir"
+                commandLine 'npm.cmd', 'install'
             } else {
-                commandLine 'npm', 'install', '-g', "$projectDir"
+                commandLine 'npm', 'install'
+            }
+        }
+        exec {
+            workingDir projectDir
+            if (System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('windows')) {
+                commandLine 'npm.cmd', 'install', '-g', ".\\"
+            } else {
+                commandLine 'npm', 'install', '-g', "./"
             }
         }
     }

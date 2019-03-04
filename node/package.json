@@ -23,9 +23,6 @@
     "kafkatail": "jdeploy-bundle/jdeploy.js"
   },
   "preferGlobal": true,
-  "jdeploy": {
-    "jar": "kafkatail-0.1.0.jar"
-  },
   "files": [
     "jdeploy-bundle"
   ],
