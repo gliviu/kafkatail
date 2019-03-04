@@ -10,12 +10,13 @@ Building and running requires [Jdk 8+](https://www.oracle.com/technetwork/java/j
 
 **Binary release**
 ```bash
-wget https://github.com/gliviu/kafkatail/archive/kafkatail-0.1.2.zip
+wget https://github.com/gliviu/kafkatail/releases/download/v0.1.2/kafkatail-0.1.2.zip
 unzip kafkatail-0.1.2.zip
 kafkatail-0.1.2/bin/kafkatail -v   # or kafkatail.bat -v
 ```
 
-**Node**
+**[Node](https://www.npmjs.com/package/kafkatail)**
+
 ```bash
 npm install -g kafkatail    # downloads jre if needed
 ```

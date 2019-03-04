@@ -40,6 +40,20 @@ task nodeInstall {
     }
 }
 
+task nodeUninstall {
+    group = "node"
+    doLast {
+        exec {
+            workingDir rootDir
+            if (System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('windows')) {
+                commandLine 'npm.cmd', 'uninstall', '-g', 'kafkatail'
+            } else {
+                commandLine 'npm', 'uninstall', '-g', 'kafkatail'
+            }
+        }
+    }
+}
+
 task nodeTest {
     group = "node"
     dependsOn nodeInstall
