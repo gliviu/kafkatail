@@ -9,11 +9,9 @@ Building and running requires [Jdk 8+](https://www.oracle.com/technetwork/java/j
 # Install
 
 **Binary release**
-```bash
-wget https://github.com/gliviu/kafkatail/releases/download/v0.1.2/kafkatail-0.1.2.zip
-unzip kafkatail-0.1.2.zip
-kafkatail-0.1.2/bin/kafkatail -v   # or kafkatail.bat -v
-```
+* download [kafkatail-0.1.3.zip](https://github.com/gliviu/kafkatail/releases/download/v0.1.3/kafkatail-0.1.3.zip)
+* unzip
+* run `kafkatail-0.1.3/bin/kafkatail -v` or `kafkatail-0.1.3\bin\kafkatail.bat -v`
 
 **[Node](https://www.npmjs.com/package/kafkatail)**
 
@@ -26,8 +24,8 @@ npm install -g kafkatail    # downloads jre if needed
 git clone https://github.com/gliviu/kafkatail
 cd kafkatail
 ./gradlew build
-unzip build/distributions/kafkatail-0.1.2.zip
-kafkatail-0.1.2/bin/kafkatail -v   # or kafkatail.bat -v
+unzip build/distributions/kafkatail-0.1.3.zip
+kafkatail-0.1.3/bin/kafkatail -v   # or kafkatail.bat -v
 ```
 
 # Usage
