@@ -10,6 +10,9 @@ import org.apache.kafka.common.TopicPartition;
 import javax.annotation.Nullable;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -18,13 +21,13 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 public class MultiConsumer {
-    public static final int MAX_BYTES_READ = 10 * 1024 * 1024;
-    public static final int MAX_RECORDS_READ = 100000;
+    private static final int MAX_BYTES_READ = 10 * 1024 * 1024;
+    private static final int MAX_RECORDS_READ = 100000;
     private final Duration OFFSET_SEEK_TIMEOUT = Duration.ofSeconds(30);
     private final Duration POLL_TIMEOUT = Duration.ofSeconds(1);
     private final Duration ALL_TOPIC_INFO_TIMEOUT = Duration.ofSeconds(30);
 
-    AtomicBoolean keepRunning = new AtomicBoolean(false);
+    private AtomicBoolean keepRunning = new AtomicBoolean(false);
 
     public void start(ConsumerOptions options, Consumer<ConsumerEvent> eventConsumer,
                       Consumer<ConsumerRecord<String, String>> recordConsumer) {
@@ -32,6 +35,7 @@ public class MultiConsumer {
             throw new IllegalStateException("Consumer already started");
         }
         keepRunning.set(true);
+        options.validate();
         Properties props = configureKafkaConsumer(options);
         try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props)) {
             eventConsumer.accept(ConsumerEvent.GET_PARTITIONS);
@@ -51,14 +55,20 @@ public class MultiConsumer {
             }
             eventConsumer.accept(ConsumerEvent.START_CONSUME);
 
+            PartitionEndLimitState partitionEndLimitState = new PartitionEndLimitState(
+                    consumer.endOffsets(partitions, OFFSET_SEEK_TIMEOUT),
+                    options, eventConsumer);
             while (keepRunning.get()) {
                 ConsumerRecords<String, String> records = consumer.poll(POLL_TIMEOUT);
+                if (options.startConsumerLimit != null || options.fromBeginning) {
+                    partitionEndLimitState.accept(records);
+                }
                 if (options.endConsumerLimit != null) {
-                    consumeRecordsWithinLimits(records, options.endConsumerLimit, recordConsumer, eventConsumer);
+                    consumeRecordsWithinLimits(records, options.endConsumerLimit, recordConsumer, partitionEndLimitState);
                 } else if (options.startConsumerLimit != null) {
                     consumeRecordsFromStartLimit(records, recordConsumer);
                 } else {
-                    consumeRecords(records, recordConsumer);
+                    consumeNewRecords(records, recordConsumer);
                 }
             }
             eventConsumer.accept(ConsumerEvent.END_CONSUME);
@@ -68,7 +78,7 @@ public class MultiConsumer {
     /**
      * Consume new records.
      */
-    private void consumeRecords(ConsumerRecords<String, String> records, Consumer<ConsumerRecord<String, String>> recordConsumer) {
+    private void consumeNewRecords(ConsumerRecords<String, String> records, Consumer<ConsumerRecord<String, String>> recordConsumer) {
         for (ConsumerRecord<String, String> record : records) {
             recordConsumer.accept(record);
         }
@@ -78,7 +88,8 @@ public class MultiConsumer {
      * Consume historical records starting from limit.
      * Historical records may come out of order. We'll have to sort them.
      */
-    private void consumeRecordsFromStartLimit(ConsumerRecords<String, String> records, Consumer<ConsumerRecord<String, String>> recordConsumer) {
+    private void consumeRecordsFromStartLimit(ConsumerRecords<String, String> records,
+                                              Consumer<ConsumerRecord<String, String>> recordConsumer) {
         StreamSupport
                 .stream(records.spliterator(), false)
                 .sorted(Comparator.comparing(ConsumerRecord::timestamp))
@@ -97,7 +108,7 @@ public class MultiConsumer {
     private void consumeRecordsWithinLimits(ConsumerRecords<String, String> records,
                                             Instant endConsumerLimit,
                                             Consumer<ConsumerRecord<String, String>> recordConsumer,
-                                            Consumer<ConsumerEvent> eventConsumer) {
+                                            PartitionEndLimitState partitionEndLimitState) {
         Counter recordsBeforeEndLimit = new Counter();
         StreamSupport.stream(records.spliterator(), false)
                 .sorted(Comparator.comparing(ConsumerRecord::timestamp))
@@ -106,9 +117,7 @@ public class MultiConsumer {
                     recordConsumer.accept(record);
                     recordsBeforeEndLimit.val++;
                 });
-        boolean reachedEndLimit = !records.isEmpty() && recordsBeforeEndLimit.val == 0;
-        if (reachedEndLimit) {
-            eventConsumer.accept(ConsumerEvent.REACHED_END_CONSUMER_LIMIT);
+        if (partitionEndLimitState.hasReachedEndLimit()) {
             stop();
         }
     }
@@ -120,6 +129,16 @@ public class MultiConsumer {
     private String debugStr(ConsumerRecord<String, String> record) {
         return String.format("timestamp:%s, topic:%s, key:%s, value:%s",
                 Instant.ofEpochMilli(record.timestamp()), record.topic(), record.key(), record.value());
+    }
+
+    /**
+     * Intended for debugging.
+     */
+    @SuppressWarnings("unused")
+    private String localDateTimeDebugStr(Instant instant) {
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.S");
+        LocalDateTime localDateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
+        return localDateTime.format(dateTimeFormatter);
     }
 
     public void stop() {
@@ -137,14 +156,14 @@ public class MultiConsumer {
         return props;
     }
 
-    private class PartitionOffsetTimestamp {
+    private class PartitionOffset {
         public TopicPartition partition;
         @Nullable
-        public Long offset;
+        Long offset;
 
-        public PartitionOffsetTimestamp(TopicPartition partition, OffsetAndTimestamp offset) {
+        PartitionOffset(TopicPartition partition, @Nullable Long offset) {
             this.partition = partition;
-            this.offset = offset == null ? null : offset.offset();
+            this.offset = offset;
         }
     }
 
@@ -156,7 +175,7 @@ public class MultiConsumer {
                 consumer.offsetsForTimes(timestampsToSearch, OFFSET_SEEK_TIMEOUT);
         partitionsToOffsets
                 .entrySet().stream()
-                .map(entry -> new PartitionOffsetTimestamp(entry.getKey(), entry.getValue()))
+                .map(entry -> new PartitionOffset(entry.getKey(), entry.getValue() == null ? null : entry.getValue().offset()))
                 .filter(partitionOffset -> partitionOffset.offset != null)
                 .forEach(partitionOffset -> consumer.seek(partitionOffset.partition, partitionOffset.offset));
     }

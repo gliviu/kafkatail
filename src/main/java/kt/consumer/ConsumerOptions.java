@@ -11,7 +11,7 @@ public class ConsumerOptions {
 
     /**
      * Consume starting with this timestamp for all topics.
-     * Cannot be used together with  {@link ConsumerOptions#fromBeginning}.
+     * Cannot be used together with {@link ConsumerOptions#fromBeginning}.
      */
     @Nullable
     public Instant startConsumerLimit;
@@ -24,7 +24,14 @@ public class ConsumerOptions {
 
     /**
      * Whether to consume all topics from their first offset.
-     * Cannot be used together with  {@link ConsumerOptions#startConsumerLimit}.
+     * Cannot be used together with {@link ConsumerOptions#startConsumerLimit}.
      */
     public boolean fromBeginning;
+
+
+    void validate() {
+        if(endConsumerLimit!=null && endConsumerLimit.isAfter(Instant.now())) {
+            throw new IllegalStateException("End consumer limit must be in the past");
+        }
+    }
 }

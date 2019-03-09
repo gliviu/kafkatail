@@ -24,6 +24,10 @@ public enum ConsumerEvent {
      */
     REACHED_END_CONSUMER_LIMIT,
     /**
+     * Consumed all historical records. Reading only new records from now on.
+     */
+    CONSUMING_NEW_RECORDS,
+    /**
      * Consumer stopped.
      */
     END_CONSUME

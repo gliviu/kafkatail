@@ -29,6 +29,10 @@ public enum CliEvent {
      */
     REACHED_END_CONSUMER_LIMIT,
     /**
+     * {@link ConsumerEvent#CONSUMING_NEW_RECORDS}
+     */
+    CONSUMING_NEW_RECORDS,
+    /**
      * {@link ConsumerEvent#END_CONSUME}
      */
     END_CONSUME,

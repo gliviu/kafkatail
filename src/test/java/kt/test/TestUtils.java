@@ -11,6 +11,10 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
@@ -18,6 +22,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+@SuppressWarnings("WeakerAccess")
 public class TestUtils {
 
     public static final Duration TEN_MILLISECONDS = new Duration(10, TimeUnit.MILLISECONDS);
@@ -121,6 +126,16 @@ public class TestUtils {
             throw new IllegalStateException(e);
         }
 
+    }
+
+    @SuppressWarnings("unused")
+    public static String localDateTime(Instant instant) {
+        return localDateTime(LocalDateTime.ofInstant(instant, ZoneId.systemDefault()));
+    }
+
+    public static String localDateTime(LocalDateTime localDateTime) {
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.S");
+        return localDateTime.format(dateTimeFormatter);
     }
 
 }

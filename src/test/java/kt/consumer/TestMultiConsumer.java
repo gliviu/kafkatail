@@ -303,50 +303,6 @@ public class TestMultiConsumer {
             assertThat(actual).isEqualTo(expected);
         }
 
-        /**
-         * <pre>
-         * t0        t2   t3        t5      t7
-         * 0    1    2    3    4    5   6   7
-         *      ^              ^        |
-         *      |              |        |
-         *      |              start consumer
-         *      |<--------------------->|
-         *      -3s                     +2s
-         * </pre>
-         */
-        @DisplayName("consumes historical records within interval that overlaps current time")
-        @Test
-        void t4938(TestInfo testInfo) throws URISyntaxException, IOException {
-            String topic1 = createTopic("topic1", testInfo);
-            String topic2 = createTopic("topic2", testInfo);
-
-            TestProducer.produce(topic1, "t0");
-            TestUtils.sleep(TWO_SECONDS);
-            TestProducer.produce(topic1, "t2");
-            TestUtils.sleep(ONE_SECOND);
-            TestProducer.produce(topic2, "t3");
-            TestUtils.sleep(ONE_SECOND);
-            TestConsumer tc = new TestConsumer(OptionBuilder.options()
-                    .startConsumerLimit(Instant.now().minusMillis(THREE_SECONDS.getValueInMS()))
-                    .endConsumerLimit(Instant.now().plusMillis(TWO_SECONDS.getValueInMS()))
-                    .topics(topic1, topic2).build());
-            tc.startConsumer();
-            TestUtils.sleep(ONE_SECOND);
-            TestProducer.produce(topic2, "t5");
-            TestUtils.sleep(TWO_SECONDS);
-            TestProducer.produce(topic1, "t7");
-
-            await().atMost(FIVE_SECONDS).untilAtomic(tc.stats.recordCount, greaterThanOrEqualTo(3));
-            TestUtils.sleep(TWO_SECONDS);
-            ConsumerResult result = tc.stopConsumer();
-
-            String actual = result
-                    .sorted() // no ordering guarantee for historical records and multiple topics/partitions
-                    .asText(VALUE);
-            String expected = expected(testInfo);
-            assertThat(actual).isEqualTo(expected);
-        }
-
         @DisplayName("uses this formula for historical records: record_timestamp >= start && record_timestamp <= end")
         @RepeatedTest(10)
         void t6587(TestInfo testInfo, RepetitionInfo repetitionInfo) {
@@ -358,7 +314,7 @@ public class TestMultiConsumer {
 
             sleep(THREE_SECONDS);
             Instant start = Instant.now().minusMillis(TWO_SECONDS.getValueInMS());
-            Instant end = Instant.now().plusMillis(ONE_SECOND.getValueInMS());
+            Instant end = Instant.now().minusMillis(TWO_HUNDRED_MILLISECONDS.getValueInMS());
             TestConsumer tc = new TestConsumer(OptionBuilder.options()
                     .startConsumerLimit(start)
                     .endConsumerLimit(end)
@@ -366,11 +322,12 @@ public class TestMultiConsumer {
             tc.startConsumer();
             sleep(THREE_SECONDS);
             producer.stop();
-            ConsumerResult actual = tc.stopConsumer();
+            ConsumerResult actual = tc.awaitStopConsumer();
             long actualCount = actual.count();
             ConsumerResult allRecords = allRecordsConsumer.stopConsumer();
-            long expectedCount = allRecords.count(record -> record.timestamp() >= start.toEpochMilli()
-                    && record.timestamp() <= end.toEpochMilli());
+            long expectedCount = allRecords.filtered(record -> record.timestamp() >= start.toEpochMilli()
+                    && record.timestamp() <= end.toEpochMilli())
+                    .count();
             assertThat(actualCount).isEqualTo(expectedCount);
         }
 
@@ -423,7 +380,7 @@ public class TestMultiConsumer {
 
             AtomicBoolean stopProducer = new AtomicBoolean();
             CompletableFuture<Void> producer = CompletableFuture.runAsync(() -> {
-                for (int i = 0; stopProducer.get() == false; i++) {
+                for (int i = 0; !stopProducer.get(); i++) {
                     TestProducer.produce(
                             topics.get((int) (Math.random() * TOPIC_NO)),
                             Integer.toString(i),
@@ -462,7 +419,7 @@ public class TestMultiConsumer {
         boolean hasDuplicates;
         boolean isContiguous;
 
-        public Stats(boolean hasDuplicates, boolean isContiguous) {
+        Stats(boolean hasDuplicates, boolean isContiguous) {
             this.hasDuplicates = hasDuplicates;
             this.isContiguous = isContiguous;
         }
@@ -475,20 +432,21 @@ public class TestMultiConsumer {
                     '}';
         }
     }
+
     private Stats stats(Stream<String> values) {
         int[] valuesArray = values.mapToInt(Integer::parseInt).sorted().toArray();
-        if(valuesArray.length<=1){
+        if (valuesArray.length <= 1) {
             return new Stats(false, true);
         }
         int v1 = valuesArray[0];
         boolean hasDuplicates = false;
         boolean isContiguous = true;
-        for(int i = 1; i<valuesArray.length; i++) {
+        for (int i = 1; i < valuesArray.length; i++) {
             int v2 = valuesArray[i];
-            if(v1==v2){
+            if (v1 == v2) {
                 hasDuplicates = true;
             }
-            if(v2-v1!=1) {
+            if (v2 - v1 != 1) {
                 isContiguous = false;
             }
             v1 = v2;

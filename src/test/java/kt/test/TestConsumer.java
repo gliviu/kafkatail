@@ -49,6 +49,14 @@ public class TestConsumer {
             return res;
         }
 
+        public ConsumerResult filtered(Predicate<ConsumerRecord<String, String>> predicate) {
+            ConsumerResult res = new ConsumerResult();
+            res.records = records
+                    .stream().filter(predicate)
+                    .collect(Collectors.toList());
+            return res;
+        }
+
         public String asText(Field... fields) {
             return records.stream()
                     .map(record -> recordText(record, fields))
@@ -84,10 +92,6 @@ public class TestConsumer {
             return String.join(", ", res);
         }
 
-        public long count(Predicate<ConsumerRecord<String, String>> predicate) {
-            return records.stream().filter(predicate).count();
-        }
-
         public long count() {
             return (long) records.size();
         }
@@ -98,9 +102,9 @@ public class TestConsumer {
         public AtomicBoolean consumerEnded = new AtomicBoolean();
     }
 
-    public MultiConsumer mc = new MultiConsumer();
+    private MultiConsumer mc = new MultiConsumer();
     public ConsumerStatistics stats = new ConsumerStatistics();
-    public ConsumerOptions options;
+    private ConsumerOptions options;
     @Nullable
     private CompletableFuture<ConsumerResult> future;
 
@@ -156,6 +160,11 @@ public class TestConsumer {
     public ConsumerResult stopConsumer() {
         Objects.requireNonNull(future);
         mc.stop();
+        return awaitStopConsumer();
+    }
+
+    public ConsumerResult awaitStopConsumer() {
+        Objects.requireNonNull(future);
         await().atMost(TEN_SECONDS).untilAtomic(stats.consumerEnded, equalTo(true));
         await().atMost(TEN_SECONDS).until(future::isDone);
         try {

@@ -8,8 +8,8 @@ import javax.annotation.Nullable;
 import static kt.cli.Console.*;
 import static kt.cli.Dates.localDateTime;
 
-public class InfoPrinter {
-    public void cliEventReceived(CliEvent cliEvent, @Nullable String eventInfo, ConsumerOptions consumerOptions, CliOptions cliOptions) {
+class InfoPrinter {
+    void cliEventReceived(CliEvent cliEvent, @Nullable String eventInfo, ConsumerOptions consumerOptions, CliOptions cliOptions) {
         switch (cliEvent) {
             case WARNING_OCCURRED:
                 println();
@@ -30,7 +30,10 @@ public class InfoPrinter {
                 printInfo(consumerOptions, cliOptions);
                 break;
             case REACHED_END_CONSUMER_LIMIT:
-                println(warn("Reached consumer start limit " + localDateTime(consumerOptions.endConsumerLimit)));
+                println(warn("Reached consumer end limit " + localDateTime(consumerOptions.endConsumerLimit)));
+                break;
+            case CONSUMING_NEW_RECORDS:
+                println(warn("Consuming new records"));
                 break;
             case END_CONSUME:
                 // ignore
@@ -47,15 +50,15 @@ public class InfoPrinter {
         }
     }
 
-    public void cliEventReceived(CliEvent cliEvent, ConsumerOptions consumerOptions, CliOptions cliOptions) {
+    void cliEventReceived(CliEvent cliEvent, ConsumerOptions consumerOptions, CliOptions cliOptions) {
         cliEventReceived(cliEvent, null, consumerOptions, cliOptions);
     }
 
-    public void consumerEventReceived(ConsumerEvent consumerEvent, ConsumerOptions options, CliOptions cliOptions) {
+    void consumerEventReceived(ConsumerEvent consumerEvent, ConsumerOptions options, CliOptions cliOptions) {
         cliEventReceived(CliEvent.valueOf(consumerEvent.name()), options, cliOptions);
     }
 
-    public void printInfo(ConsumerOptions options, CliOptions cliOptions) {
+    private void printInfo(ConsumerOptions options, CliOptions cliOptions) {
         println("Server: " + options.broker);
         if (options.startConsumerLimit != null) {
             println("Consume from: " + localDateTime(options.startConsumerLimit));
