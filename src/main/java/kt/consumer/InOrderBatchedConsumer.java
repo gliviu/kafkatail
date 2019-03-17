@@ -18,7 +18,7 @@ import java.util.stream.StreamSupport;
  * Consumes records with no order guarantee and outputs them ordered
  * by their timestamp.
  */
-public class InOrderBatchedConsumer {
+class InOrderBatchedConsumer {
     static class Limits {
         int maxRecordCount;
         int maxRecordTotalSize;
@@ -32,8 +32,8 @@ public class InOrderBatchedConsumer {
          *                                      sorted records.
          * @param maxTimeSinceBatchStart For how long to accumulate records.
          */
-        public Limits(Duration maxTimeSinceLastRecord, Duration maxTimeSinceBatchStart,
-                      int maxRecordCount, int maxRecordTotalSize) {
+        Limits(Duration maxTimeSinceLastRecord, Duration maxTimeSinceBatchStart,
+               int maxRecordCount, int maxRecordTotalSize) {
             this.maxRecordCount = maxRecordCount;
             this.maxRecordTotalSize = maxRecordTotalSize;
             this.maxTimeSinceBatchStart = maxTimeSinceBatchStart;
@@ -88,18 +88,14 @@ public class InOrderBatchedConsumer {
         TopicPartition partition = new TopicPartition(record.topic(), record.partition());
         recordsByPartition.computeIfAbsent(partition, k -> new ArrayList<>()).add(record);
         stats.recordCount++;
-        stats.recordsTotalSize += record.value().length();
+        stats.recordsTotalSize += (record.value().length() + (record.key()==null?0:record.key().length()));
         stats.lastRecordTime = Instant.now();
-//        System.out.println("5667 lr "+stats.lastRecordTime);
     }
 
     /**
      * Call this periodically to allow producer output ordered records.
      */
     void process() {
-//        System.out.println("5667 a0 "+maxTimeSinceLastRecord.getSeconds());
-//        System.out.println("5667 a01 "+maxTimeSinceBatchStart.getSeconds());
-//        System.out.println("5667 a1 "+recordsByPartition.size());
         if (recordsByPartition.isEmpty()) {
             return;
         }
@@ -108,8 +104,6 @@ public class InOrderBatchedConsumer {
         boolean exceedsDelay = Duration.between(stats.lastRecordTime, Instant.now()).compareTo(limits.maxTimeSinceLastRecord) > 0;
         boolean exceedsRecordAccumulationInterval = Duration.between(stats.lastProcesstime, Instant.now()).compareTo(limits.maxTimeSinceBatchStart) > 0;
         if (exceedsCount || exceedsDelay || exceedsSize || exceedsRecordAccumulationInterval) {
-//            System.out.println(Instant.now()+" 5667 a2 lr "+Duration.between(stats.lastRecordTime, Instant.now()).getSeconds());
-//            System.out.println(Instant.now()+" 5667 a2 mai "+Duration.between(stats.lastProcesstime, Instant.now()).getSeconds());
             stats.lastProcesstime = Instant.now();
             Iterable<ConsumerRecord<String, String>> recordSorter = () -> new OrderedRecordIterator(recordsByPartition.values());
             StreamSupport.stream(recordSorter.spliterator(), false).forEach(recordConsumer::accept);

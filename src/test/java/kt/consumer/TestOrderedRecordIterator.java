@@ -18,7 +18,7 @@ import static kt.consumer.TimestampPartition.partition;
 class TestOrderedRecordIterator {
 
 
-    @DisplayName("orders records without missing timestamp")
+    @DisplayName("orders records by timestamp")
     @Test
     void t2567() {
         Collection<List<ConsumerRecord<String, String>>> topicPartitionListMap = createRecords(
@@ -46,7 +46,7 @@ class TestOrderedRecordIterator {
         Assertions.assertThat(records(ro)).isEqualTo("");
     }
 
-    @DisplayName("handles multiple empty partition")
+    @DisplayName("handles multiple empty partitions")
     @Test
     void t4687() {
         Collection<List<ConsumerRecord<String, String>>> topicPartitionListMap = createRecords(
@@ -97,6 +97,18 @@ class TestOrderedRecordIterator {
         Assertions.assertThat(records(ro)).isEqualTo("(p1, N),(p1, N),(p2, N),(p2, N),(p1, 3),(p2, 5),(p1, 9),(p2, 10)");
     }
 
+    @DisplayName("orders records with missing timestamp at the end in all partitions")
+    @Test
+    void t1348() {
+        Collection<List<ConsumerRecord<String, String>>> topicPartitionListMap = createRecords(
+                partition("p1", 3, 9, -1, -1),
+                partition("p2", 5, 10, -1, -1)
+        );
+        OrderedRecordIterator ro = new OrderedRecordIterator(topicPartitionListMap);
+        Assertions.assertThat(records(ro)).isEqualTo("(p1, 3),(p2, 5),(p1, 9),(p1, N),(p1, N),(p2, 10),(p2, N),(p2, N)");
+    }
+
+
     @DisplayName("order multiple partitions")
     @Test
     void t3489() {
@@ -120,16 +132,6 @@ class TestOrderedRecordIterator {
         Assertions.assertThat(records(ro)).isEqualTo("(p2, 2),(p1, 3),(p2, 5),(p1, 9),(p1, N),(p1, N),(p2, 10)");
     }
 
-    @DisplayName("orders records with missing timestamp at beginning in all partitions")
-    @Test
-    void t1348() {
-        Collection<List<ConsumerRecord<String, String>>> topicPartitionListMap = createRecords(
-                partition("p1", 3, 9, -1, -1),
-                partition("p2", 5, 10, -1, -1)
-        );
-        OrderedRecordIterator ro = new OrderedRecordIterator(topicPartitionListMap);
-        Assertions.assertThat(records(ro)).isEqualTo("(p1, 3),(p2, 5),(p1, 9),(p1, N),(p1, N),(p2, 10),(p2, N),(p2, N)");
-    }
 
     private String records(OrderedRecordIterator ro) {
         Iterable<ConsumerRecord<String, String>> it = () -> ro;

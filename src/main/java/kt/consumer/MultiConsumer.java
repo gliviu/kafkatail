@@ -23,8 +23,6 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 public class MultiConsumer {
-    private static final int MAX_BYTES_READ = 10 * 1024 * 1024;
-    private static final int MAX_RECORDS_READ = 100000;
     private final Duration OFFSET_SEEK_TIMEOUT = Duration.ofSeconds(30);
     private final Duration POLL_TIMEOUT = Duration.ofSeconds(1);
     private final Duration ALL_TOPIC_INFO_TIMEOUT = Duration.ofSeconds(30);
@@ -32,7 +30,7 @@ public class MultiConsumer {
     private final Duration ORDERED_RECORD_PRODUCER_DELAY_HISTORICAL_RECORDS = PartitionEndLimitState.END_LIMIT_OFFSET_THRESOLD;
     private final Duration ORDERED_RECORD_PRODUCER_MAX_ACCUMULATION_INTERVAL_NEW_RECORDS = Duration.ofSeconds(2);
     private final Duration ORDERED_RECORD_PRODUCER_MAX_ACCUMULATION_INTERVAL_HISTORICAL_RECORDS = Duration.ofSeconds(20);
-    private final int ORDERED_RECORD_PRODUCER_MAX_RECORD_COUNT = MAX_RECORDS_READ;
+    private final int ORDERED_RECORD_PRODUCER_MAX_RECORD_COUNT = 100000;
     private final int ORDERED_RECORD_PRODUCER_MAX_RECORD_TOTAL_SIZE = ORDERED_RECORD_PRODUCER_MAX_RECORD_COUNT * 200;
 
     @InternalState
@@ -187,8 +185,6 @@ public class MultiConsumer {
     private Properties configureKafkaConsumer(ConsumerOptions options) {
         Properties props = new Properties();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, options.broker);
-        props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, MAX_RECORDS_READ);
-        props.put(ConsumerConfig.FETCH_MAX_BYTES_CONFIG, MAX_BYTES_READ);
         props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");  // don't need any offset persisted
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
