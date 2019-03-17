@@ -11,9 +11,9 @@ import static java.util.Arrays.asList;
 import static kt.cli.Console.*;
 
 class CliOptionsParser {
-    OptionParser parser;
+    private OptionParser parser;
 
-    public CliOptions parse(String... args) {
+    CliOptions parse(String... args) {
         parser = new OptionParser();
         OptionSpec<String> brokerSpec = parser.accepts("b")
                 .withRequiredArg().ofType(String.class);
@@ -27,6 +27,7 @@ class CliOptionsParser {
                 .withRequiredArg().ofType(String.class);
         OptionSpec<String> endConsumerLimitSpec = parser.acceptsAll(asList("u", "until"))
                 .withRequiredArg().ofType(String.class);
+        OptionSpec<Void> realTimeSpec = parser.accepts("real-time");
         OptionSpec<Void> helpSpec = parser.acceptsAll(asList("h", "help"));
         OptionSpec<Void> versionSpec = parser.acceptsAll(asList("v", "version"));
         OptionSet options = parser.parse(args);
@@ -38,9 +39,11 @@ class CliOptionsParser {
         cliOptions.startConsumerLimit = options.valueOf(startConsumerLimitSpec);
         cliOptions.consumeDuration = options.valueOf(consumeDurationSpec);
         cliOptions.endConsumerLimit = options.valueOf(endConsumerLimitSpec);
-        cliOptions.lines = options.valueOf(linesSpec);
         cliOptions.help = options.has(helpSpec);
         cliOptions.version = options.has(versionSpec);
+        cliOptions.lines = options.valueOf(linesSpec);
+        cliOptions.realTime = options.has(realTimeSpec);
+
         return cliOptions;
     }
 

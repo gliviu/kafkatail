@@ -10,7 +10,7 @@ import static kt.cli.Console.println;
 import static kt.cli.Console.warn;
 import static kt.cli.Dates.localDateTime;
 
-public class RecordPrinter {
+class RecordPrinter {
     private final static int MAX_KEY_PAD = 15;
     private final static int MAX_TIMESTAMP_PAD = localDateTime(Instant.now()).length();
     private final static int MAX_TOPIC_PAD = 15;
@@ -18,7 +18,7 @@ public class RecordPrinter {
     private int maxTopicDisplaySize = 0;
     private int maxOffsetDisplaySize = 0;
 
-    public void onTopicsUpdated(Set<String> topics) {
+    void onTopicsUpdated(Set<String> topics) {
         maxTopicDisplaySize = topics.stream()
                 .max(Comparator.comparing(String::length))
                 .map(String::length)
@@ -26,7 +26,7 @@ public class RecordPrinter {
                 .get();
     }
 
-    public void printRecords(ConsumerRecord<String, String> record) {
+    void printRecords(ConsumerRecord<String, String> record) {
         String topicName = Console.yellow(padRight(record.topic(), maxTopicDisplaySize));
 
         String key = record.key() == null ? "" : record.key() + " ";

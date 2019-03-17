@@ -1,5 +1,7 @@
 package kt.consumer;
 
+import kt.consumer.InOrderBatchedConsumer.Limits;
+import kt.markers.InternalState;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.DescribeTopicsOptions;
 import org.apache.kafka.clients.admin.DescribeTopicsResult;
@@ -26,8 +28,18 @@ public class MultiConsumer {
     private final Duration OFFSET_SEEK_TIMEOUT = Duration.ofSeconds(30);
     private final Duration POLL_TIMEOUT = Duration.ofSeconds(1);
     private final Duration ALL_TOPIC_INFO_TIMEOUT = Duration.ofSeconds(30);
+    private final Duration ORDERED_RECORD_PRODUCER_DELAY_NEW_RECORDS = POLL_TIMEOUT;
+    private final Duration ORDERED_RECORD_PRODUCER_DELAY_HISTORICAL_RECORDS = PartitionEndLimitState.END_LIMIT_OFFSET_THRESOLD;
+    private final Duration ORDERED_RECORD_PRODUCER_MAX_ACCUMULATION_INTERVAL_NEW_RECORDS = Duration.ofSeconds(2);
+    private final Duration ORDERED_RECORD_PRODUCER_MAX_ACCUMULATION_INTERVAL_HISTORICAL_RECORDS = Duration.ofSeconds(20);
+    private final int ORDERED_RECORD_PRODUCER_MAX_RECORD_COUNT = MAX_RECORDS_READ;
+    private final int ORDERED_RECORD_PRODUCER_MAX_RECORD_TOTAL_SIZE = ORDERED_RECORD_PRODUCER_MAX_RECORD_COUNT * 200;
 
+    @InternalState
     private AtomicBoolean keepRunning = new AtomicBoolean(false);
+
+    private InOrderBatchedConsumer inOrderBatchedConsumer;
+    private ConsumerOptions options;
 
     public void start(ConsumerOptions options, Consumer<ConsumerEvent> eventConsumer,
                       Consumer<ConsumerRecord<String, String>> recordConsumer) {
@@ -35,8 +47,14 @@ public class MultiConsumer {
             throw new IllegalStateException("Consumer already started");
         }
         keepRunning.set(true);
+        this.options = options;
         options.validate();
         Properties props = configureKafkaConsumer(options);
+        if (options.shouldReadHistoricalRecords()) {
+            inOrderBatchedConsumer = new InOrderBatchedConsumer(InOrderBatchedConsumerLimitsForHistoricalRecords(), recordConsumer);
+        } else {
+            inOrderBatchedConsumer = new InOrderBatchedConsumer(InOrderBatchedConsumerLimitsForNewRecords(), recordConsumer);
+        }
         try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props)) {
             eventConsumer.accept(ConsumerEvent.GET_PARTITIONS);
             List<TopicPartition> partitions = getPartitions(options.broker, options.topics);
@@ -60,8 +78,15 @@ public class MultiConsumer {
                     options, eventConsumer);
             while (keepRunning.get()) {
                 ConsumerRecords<String, String> records = consumer.poll(POLL_TIMEOUT);
-                if (options.startConsumerLimit != null || options.fromBeginning) {
-                    partitionEndLimitState.accept(records);
+                inOrderBatchedConsumer.process();
+                if (options.shouldReadHistoricalRecords()) {
+                    partitionEndLimitState.acceptRecords(records);
+                    if (partitionEndLimitState.hasReachedEndLimit()) {
+                        inOrderBatchedConsumer.updateMaxTimeSinceLastRecord(
+                                ORDERED_RECORD_PRODUCER_DELAY_NEW_RECORDS);
+                        inOrderBatchedConsumer.updateMaxTimeSinceBatchStart(
+                                ORDERED_RECORD_PRODUCER_MAX_ACCUMULATION_INTERVAL_NEW_RECORDS);
+                    }
                 }
                 if (options.endConsumerLimit != null) {
                     consumeRecordsWithinLimits(records, options.endConsumerLimit, recordConsumer, partitionEndLimitState);
@@ -78,9 +103,14 @@ public class MultiConsumer {
     /**
      * Consume new records.
      */
-    private void consumeNewRecords(ConsumerRecords<String, String> records, Consumer<ConsumerRecord<String, String>> recordConsumer) {
+    private void consumeNewRecords(
+            ConsumerRecords<String, String> records, Consumer<ConsumerRecord<String, String>> recordConsumer) {
         for (ConsumerRecord<String, String> record : records) {
-            recordConsumer.accept(record);
+            if (options.sortRecords) {
+                inOrderBatchedConsumer.acceptRecord(record);
+            } else {
+                recordConsumer.accept(record);
+            }
         }
     }
 
@@ -88,12 +118,18 @@ public class MultiConsumer {
      * Consume historical records starting from limit.
      * Historical records may come out of order. We'll have to sort them.
      */
-    private void consumeRecordsFromStartLimit(ConsumerRecords<String, String> records,
-                                              Consumer<ConsumerRecord<String, String>> recordConsumer) {
+    private void consumeRecordsFromStartLimit(
+            ConsumerRecords<String, String> records, Consumer<ConsumerRecord<String, String>> recordConsumer) {
         StreamSupport
                 .stream(records.spliterator(), false)
                 .sorted(Comparator.comparing(ConsumerRecord::timestamp))
-                .forEach(recordConsumer);
+                .forEach(record -> {
+                    if (options.sortRecords) {
+                        inOrderBatchedConsumer.acceptRecord(record);
+                    } else {
+                        recordConsumer.accept(record);
+                    }
+                });
     }
 
     private static class Counter {
@@ -105,16 +141,19 @@ public class MultiConsumer {
      * Historical records may come out of order. We'll have to sort them.
      * Also stop consuming if end limit is reached.
      */
-    private void consumeRecordsWithinLimits(ConsumerRecords<String, String> records,
-                                            Instant endConsumerLimit,
-                                            Consumer<ConsumerRecord<String, String>> recordConsumer,
-                                            PartitionEndLimitState partitionEndLimitState) {
+    private void consumeRecordsWithinLimits(
+            ConsumerRecords<String, String> records, Instant endConsumerLimit,
+            Consumer<ConsumerRecord<String, String>> recordConsumer, PartitionEndLimitState partitionEndLimitState) {
         Counter recordsBeforeEndLimit = new Counter();
         StreamSupport.stream(records.spliterator(), false)
                 .sorted(Comparator.comparing(ConsumerRecord::timestamp))
                 .filter(record -> record.timestamp() <= endConsumerLimit.toEpochMilli())
                 .forEach(record -> {
-                    recordConsumer.accept(record);
+                    if (options.sortRecords) {
+                        inOrderBatchedConsumer.acceptRecord(record);
+                    } else {
+                        recordConsumer.accept(record);
+                    }
                     recordsBeforeEndLimit.val++;
                 });
         if (partitionEndLimitState.hasReachedEndLimit()) {
@@ -197,6 +236,20 @@ public class MultiConsumer {
         } catch (InterruptedException | ExecutionException e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    private Limits InOrderBatchedConsumerLimitsForHistoricalRecords() {
+        return new Limits(
+                ORDERED_RECORD_PRODUCER_DELAY_HISTORICAL_RECORDS,
+                ORDERED_RECORD_PRODUCER_MAX_ACCUMULATION_INTERVAL_HISTORICAL_RECORDS,
+                ORDERED_RECORD_PRODUCER_MAX_RECORD_COUNT, ORDERED_RECORD_PRODUCER_MAX_RECORD_TOTAL_SIZE);
+    }
+
+    private Limits InOrderBatchedConsumerLimitsForNewRecords() {
+        return new Limits(
+                ORDERED_RECORD_PRODUCER_DELAY_NEW_RECORDS,
+                ORDERED_RECORD_PRODUCER_MAX_ACCUMULATION_INTERVAL_NEW_RECORDS,
+                ORDERED_RECORD_PRODUCER_MAX_RECORD_COUNT, ORDERED_RECORD_PRODUCER_MAX_RECORD_TOTAL_SIZE);
     }
 
 }

@@ -1,5 +1,6 @@
 package kt.consumer;
 
+import kt.markers.InternalState;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.TopicPartition;
@@ -20,7 +21,7 @@ import java.util.stream.StreamSupport;
  */
 class PartitionEndLimitState {
 
-    private static final Duration END_LIMIT_OFFSET_THRESOLD = Duration.ofSeconds(5);
+    static final Duration END_LIMIT_OFFSET_THRESOLD = Duration.ofSeconds(5);
 
     private static class PartitionState {
         /**
@@ -58,8 +59,10 @@ class PartitionEndLimitState {
     /**
      * Map partition to their consume status - consuming historical records or not.
      */
+    @InternalState
     private Map<TopicPartition, PartitionState> partitionEndLimitStates;
 
+    @InternalState
     private boolean reachedEndLimit = false;
 
     /**
@@ -80,7 +83,7 @@ class PartitionEndLimitState {
     /**
      * Call this with newly polled records.
      */
-    void accept(ConsumerRecords<String, String> records) {
+    void acceptRecords(ConsumerRecords<String, String> records) {
         if (reachedEndLimit) {
             return;
         }

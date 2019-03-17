@@ -76,6 +76,9 @@ class InfoPrinter {
             }
             println();
         }
+        if (cliOptions.realTime) {
+            println(warn("Realtime: true"));
+        }
         println("Topics: " + String.join(" ", options.topics));
         println();
     }

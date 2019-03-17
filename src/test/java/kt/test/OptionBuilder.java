@@ -54,5 +54,10 @@ public class OptionBuilder {
         return this;
     }
 
+    public OptionBuilder sortRecords(boolean val) {
+        options.sortRecords = val;
+        return this;
+    }
+
 
 }

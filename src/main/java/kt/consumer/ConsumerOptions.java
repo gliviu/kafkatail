@@ -28,10 +28,22 @@ public class ConsumerOptions {
      */
     public boolean fromBeginning;
 
+    /**
+     * Whether to output records sorted by their timestamp.
+     */
+    public boolean sortRecords;
+
 
     void validate() {
         if(endConsumerLimit!=null && endConsumerLimit.isAfter(Instant.now())) {
             throw new IllegalStateException("End consumer limit must be in the past");
         }
+    }
+
+    /**
+     * @return true if historical records are to be fetched.
+     */
+    boolean shouldReadHistoricalRecords() {
+        return startConsumerLimit != null || fromBeginning;
     }
 }

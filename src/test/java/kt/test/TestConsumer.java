@@ -18,6 +18,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -30,6 +32,7 @@ import static org.hamcrest.Matchers.equalTo;
 public class TestConsumer {
     private final static Logger logger = LoggerFactory.getLogger(TestConsumer.class);
     private static final ExecutorService executor = Executors.newFixedThreadPool(20);
+    private static final Pattern NORMALIZE_TOPIC_PATTERN = Pattern.compile("(.*?)_.*");
 
     public enum Field {
         PARTITION, KEY, VALUE, TIMESTAMP
@@ -39,9 +42,18 @@ public class TestConsumer {
         private List<ConsumerRecord<String, String>> records;
 
         /**
-         * @return copy of this @{@link ConsumerResult} with records sorted by value.
+         * Kafka does not provide any ordering guarantee when multiple topics or multiple partitions are consumed.
+         * For this reason we enforce sorting for having consistent results when comparing with reference expected values.
+         *
+         * @param alreadySorted true if this {@link ConsumerResult} is already sorted.
+         *                      We do not sort records in this case
+         * @return copy of this @{@link ConsumerResult} with records sorted by value if not 'already sorted'.
+         * Otherwise returns unaltered result.
          */
-        public ConsumerResult sorted() {
+        public ConsumerResult sorted(boolean alreadySorted) {
+            if (alreadySorted) {
+                return this;
+            }
             ConsumerResult res = new ConsumerResult();
             res.records = records
                     .stream().sorted(Comparator.comparing(ConsumerRecord::value))
@@ -79,7 +91,7 @@ public class TestConsumer {
             if (fieldSet.contains(Field.TIMESTAMP)) {
                 res.add("timestamp:" + Instant.ofEpochMilli(record.timestamp()));
             }
-            res.add("topic:" + record.topic());
+            res.add("topic:" + normalizeTopicName(record.topic()));
             if (fieldSet.contains(Field.KEY)) {
                 res.add("key:" + record.key());
             }
@@ -90,6 +102,25 @@ public class TestConsumer {
                 res.add("partition:" + record.partition());
             }
             return String.join(", ", res);
+        }
+
+        /**
+         * Removes suffix starting with underscore if present.
+         * <pre>
+         * Examples:
+         * topic1_a3d223 -> topic1
+         * topic1 -> topic1   (leaves unchanged)
+         * </pre>
+         *
+         * @param topic un-normalized topic name
+         * @return normalized topic name
+         */
+        private String normalizeTopicName(String topic) {
+            Matcher matcher = NORMALIZE_TOPIC_PATTERN.matcher(topic);
+            if (matcher.matches()) {
+                return matcher.group(1);
+            }
+            return topic;
         }
 
         public long count() {

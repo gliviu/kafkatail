@@ -31,6 +31,7 @@ public class TestUtils {
     public static String bootstrapServers() {
         return "localhost:9093";
     }
+    private static DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
 
     /**
      * Checks if kafka server is running.
@@ -74,10 +75,6 @@ public class TestUtils {
         }
     }
 
-    public static String createTopic(TestInfo testInfo) {
-        return createTopic(testInfo, null);
-    }
-
     public static String createTopic(TestInfo testInfo, RepetitionInfo repetitionInfo) {
         return createTopic("topic1", testInfo, repetitionInfo, 1);
     }
@@ -113,6 +110,14 @@ public class TestUtils {
         }
     }
 
+    public static void sleep(java.time.Duration duration) {
+        try {
+            Thread.sleep(duration.toMillis());
+        } catch (InterruptedException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
     /**
      * @return all consumer groups existing in broker
      */
@@ -134,7 +139,6 @@ public class TestUtils {
     }
 
     public static String localDateTime(LocalDateTime localDateTime) {
-        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.S");
         return localDateTime.format(dateTimeFormatter);
     }
 

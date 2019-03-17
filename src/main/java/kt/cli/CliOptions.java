@@ -23,6 +23,8 @@ public class CliOptions {
     @Nullable
     public String lines;
 
+    public boolean realTime;
+
     public boolean help;
 
     public boolean version;

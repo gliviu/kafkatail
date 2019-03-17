@@ -16,7 +16,7 @@ import static java.time.Duration.ofSeconds;
 import static kt.cli.ConsumerLimits.*;
 import static kt.cli.ConsumerLimits.consumerEndLimit;
 
-public class ConsumerOptionsBuilder {
+class ConsumerOptionsBuilder {
 
     private InfoPrinter infoPrinter;
     private KafkaAdmin kafkaAdmin;
@@ -31,7 +31,7 @@ public class ConsumerOptionsBuilder {
      * @param cliOptions cli options
      * @return consumer options
      */
-    public ConsumerOptions buildConsumerOptions(CliOptions cliOptions) {
+    ConsumerOptions buildConsumerOptions(CliOptions cliOptions) {
         ConsumerOptions options = new ConsumerOptions();
         options.broker = getBroker(cliOptions.broker);
         convertConsumerLimits(cliOptions, options);
@@ -83,6 +83,8 @@ public class ConsumerOptionsBuilder {
                 options.endConsumerLimit = instant(consumerEndLimit(cliOptions.endConsumerLimit));
             }
         }
+
+        options.sortRecords = !cliOptions.realTime;
 
         if (options.endConsumerLimit != null) {
             // add one second so interval is inclusive

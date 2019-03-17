@@ -8,12 +8,15 @@ import org.awaitility.Duration;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -30,20 +33,23 @@ import static org.junit.jupiter.api.parallel.ExecutionMode.CONCURRENT;
 @Execution(CONCURRENT)
 @DisplayName("Multi Consumer")
 @ExtendWith(EmbeddedKafkaJunitExtension.class)
-public class TestMultiConsumer {
+class TestMultiConsumer {
 
     @DisplayName("consumes new records")
-    @Test
-    void t4728(TestInfo testInfo) throws URISyntaxException, IOException {
-        String topic = createTopic(testInfo);
-        TestConsumer tc = new TestConsumer(OptionBuilder.options().topics(topic).build());
+    @ParameterizedTest
+    @ValueSource(strings = {"true", "false"})
+    void t4728(Boolean ordered, TestInfo testInfo) throws URISyntaxException, IOException {
+        String topic = createTopic("topic1_" + UUID.randomUUID(), testInfo);
+        TestConsumer tc = new TestConsumer(OptionBuilder.options()
+                .topics(topic)
+                .sortRecords(ordered).build());
 
         tc.startConsumer();
 
         TestProducer.produce(topic, "key1", "val1");
         TestProducer.produce(topic, "key2", "val2");
         TestProducer.produce(topic, "key3", "val3");
-        await().atMost(FIVE_SECONDS).untilAtomic(tc.stats.recordCount, greaterThanOrEqualTo(3));
+        await().atMost(TEN_SECONDS).untilAtomic(tc.stats.recordCount, greaterThanOrEqualTo(3));
         TestUtils.sleep(TWO_SECONDS);
         ConsumerResult result = tc.stopConsumer();
 
@@ -53,10 +59,13 @@ public class TestMultiConsumer {
     }
 
     @DisplayName("does not consume prior records")
-    @Test
-    void t6915(TestInfo testInfo) throws URISyntaxException, IOException {
-        String topic = createTopic(testInfo);
-        TestConsumer tc = new TestConsumer(OptionBuilder.options().topics(topic).build());
+    @ParameterizedTest
+    @ValueSource(strings = {"true", "false"})
+    void t6915(Boolean ordered, TestInfo testInfo) throws URISyntaxException, IOException {
+        String topic = createTopic("topic1_" + UUID.randomUUID(), testInfo);
+        TestConsumer tc = new TestConsumer(OptionBuilder.options()
+                .topics(topic)
+                .sortRecords(ordered).build());
 
         TestProducer.produce(topic, "val1");
         TestProducer.produce(topic, "val2");
@@ -66,7 +75,7 @@ public class TestMultiConsumer {
         TestProducer.produce(topic, "val4");
         TestProducer.produce(topic, "val5");
         TestProducer.produce(topic, "val6");
-        await().atMost(FIVE_SECONDS).untilAtomic(tc.stats.recordCount, greaterThanOrEqualTo(3));
+        await().atMost(TEN_SECONDS).untilAtomic(tc.stats.recordCount, greaterThanOrEqualTo(3));
         TestUtils.sleep(TWO_SECONDS);
         ConsumerResult result = tc.stopConsumer();
 
@@ -76,17 +85,20 @@ public class TestMultiConsumer {
     }
 
     @DisplayName("accepts records with no key")
-    @Test
-    void t8472(TestInfo testInfo) throws URISyntaxException, IOException {
-        String topic = createTopic(testInfo);
-        TestConsumer tc = new TestConsumer(OptionBuilder.options().topics(topic).build());
+    @ParameterizedTest
+    @ValueSource(strings = {"true", "false"})
+    void t8472(Boolean ordered, TestInfo testInfo) throws URISyntaxException, IOException {
+        String topic = createTopic("topic1_" + UUID.randomUUID(), testInfo);
+        TestConsumer tc = new TestConsumer(OptionBuilder.options()
+                .topics(topic)
+                .sortRecords(ordered).build());
 
         tc.startConsumer();
 
         TestProducer.produce(topic, "val1");
         TestProducer.produce(topic, "val2");
         TestProducer.produce(topic, "val3");
-        await().atMost(FIVE_SECONDS).untilAtomic(tc.stats.recordCount, greaterThanOrEqualTo(3));
+        await().atMost(TEN_SECONDS).untilAtomic(tc.stats.recordCount, greaterThanOrEqualTo(3));
         TestUtils.sleep(TWO_SECONDS);
         ConsumerResult result = tc.stopConsumer();
 
@@ -96,13 +108,15 @@ public class TestMultiConsumer {
     }
 
     @DisplayName("consumes from multiple topics")
-    @Test
-    void t8467(TestInfo testInfo) throws URISyntaxException, IOException {
-        String topic1 = createTopic("topic1", testInfo);
-        String topic2 = createTopic("topic2", testInfo);
-        String topic3 = createTopic("topic3", testInfo);
+    @ParameterizedTest
+    @ValueSource(strings = {"true", "false"})
+    void t8467(Boolean ordered, TestInfo testInfo) throws URISyntaxException, IOException {
+        String topic1 = createTopic("topic1_" + UUID.randomUUID(), testInfo);
+        String topic2 = createTopic("topic2_" + UUID.randomUUID(), testInfo);
+        String topic3 = createTopic("topic3_" + UUID.randomUUID(), testInfo);
         TestConsumer tc = new TestConsumer(OptionBuilder.options()
-                .topics(topic1, topic2, topic3).build());
+                .topics(topic1, topic2, topic3)
+                .sortRecords(ordered).build());
 
         tc.startConsumer();
 
@@ -112,25 +126,27 @@ public class TestMultiConsumer {
         TestProducer.produce(topic3, "key4", "val4");
         TestProducer.produce(topic1, "key5", "val5");
         TestProducer.produce(topic2, "key6", "val6");
-        await().atMost(FIVE_SECONDS).untilAtomic(tc.stats.recordCount, greaterThanOrEqualTo(6));
+        await().atMost(TEN_SECONDS).untilAtomic(tc.stats.recordCount, greaterThanOrEqualTo(6));
         TestUtils.sleep(TWO_SECONDS);
         ConsumerResult result = tc.stopConsumer();
 
         String actual = result
-                .sorted() // no ordering guarantee when reading multiple topics/partitions
+                .sorted(ordered)
                 .asText(KEY, VALUE);
         String expected = expected(testInfo);
         assertThat(actual).isEqualTo(expected);
     }
 
     @DisplayName("consumes from multiple topics with multiple partitions each")
-    @Test
-    void t7246(TestInfo testInfo) throws URISyntaxException, IOException {
-        String topic1 = createTopic("topic1", testInfo, 5);
-        String topic2 = createTopic("topic2", testInfo, 5);
-        String topic3 = createTopic("topic3", testInfo, 5);
+    @ParameterizedTest
+    @ValueSource(strings = {"true", "false"})
+    void t7246(Boolean ordered, TestInfo testInfo) throws URISyntaxException, IOException {
+        String topic1 = createTopic("topic1_" + UUID.randomUUID(), testInfo, 5);
+        String topic2 = createTopic("topic2_" + UUID.randomUUID(), testInfo, 5);
+        String topic3 = createTopic("topic3_" + UUID.randomUUID(), testInfo, 5);
         TestConsumer tc = new TestConsumer(OptionBuilder.options()
-                .topics(topic1, topic2, topic3).build());
+                .topics(topic1, topic2, topic3)
+                .sortRecords(ordered).build());
 
         tc.startConsumer();
 
@@ -146,28 +162,31 @@ public class TestMultiConsumer {
         TestProducer.produce(topic3, "val10", 0);
         TestProducer.produce(topic1, "val11", 2);
         TestProducer.produce(topic2, "val12", 0);
-        await().atMost(FIVE_SECONDS).untilAtomic(tc.stats.recordCount, greaterThanOrEqualTo(12));
+        await().atMost(TEN_SECONDS).untilAtomic(tc.stats.recordCount, greaterThanOrEqualTo(12));
         TestUtils.sleep(TWO_SECONDS);
         ConsumerResult result = tc.stopConsumer();
 
         String actual = result
-                .sorted() // no ordering guarantee when reading multiple topics/partitions
+                .sorted(ordered)
                 .asText(VALUE, PARTITION);
         String expected = expected(testInfo);
         assertThat(actual).isEqualTo(expected);
     }
 
     @DisplayName("does not create consumer group")
-    @Test
-    void t9571(TestInfo testInfo) {
-        String topic = createTopic(testInfo);
-        TestConsumer tc = new TestConsumer(OptionBuilder.options().topics(topic).build());
+    @ParameterizedTest
+    @ValueSource(strings = {"true", "false"})
+    void t9571(Boolean ordered, TestInfo testInfo) {
+        String topic = createTopic("topic1_" + UUID.randomUUID(), testInfo);
+        TestConsumer tc = new TestConsumer(OptionBuilder.options()
+                .topics(topic)
+                .sortRecords(ordered).build());
 
         tc.startConsumer();
         TestProducer.produce(topic, "val1");
         TestProducer.produce(topic, "val2");
         TestProducer.produce(topic, "val3");
-        await().atMost(FIVE_SECONDS).untilAtomic(tc.stats.recordCount, greaterThanOrEqualTo(3));
+        await().atMost(TEN_SECONDS).untilAtomic(tc.stats.recordCount, greaterThanOrEqualTo(3));
         TestUtils.sleep(TWO_SECONDS);
 
         assertThat(TestUtils.getConsumerGroups("localhost:9093")).size().isEqualTo(0);
@@ -188,21 +207,23 @@ public class TestMultiConsumer {
          * </pre>
          */
         @DisplayName("consumes historical records")
-        @Test
-        void t9472(TestInfo testInfo) throws URISyntaxException, IOException {
-            String topic1 = createTopic("topic1", testInfo);
-            String topic2 = createTopic("topic2", testInfo);
+        @ParameterizedTest
+        @ValueSource(strings = {"true", "false"})
+        void t9472(Boolean ordered, TestInfo testInfo) throws URISyntaxException, IOException {
+            String topic1 = createTopic("topic1_" + UUID.randomUUID(), testInfo);
+            String topic2 = createTopic("topic2_" + UUID.randomUUID(), testInfo);
 
             TestProducer.produce(topic1, "t0a");
             TestUtils.sleep(TWO_SECONDS);
-            TestProducer.produce(topic2, "t2b");
             TestProducer.produce(topic1, "t2a");
+            TestProducer.produce(topic2, "t2b");
             TestUtils.sleep(ONE_SECOND);
             TestProducer.produce(topic2, "t3b");
             TestUtils.sleep(ONE_SECOND);
             TestConsumer tc = new TestConsumer(OptionBuilder.options()
                     .startConsumerLimit(Instant.now().minusMillis(THREE_SECONDS.getValueInMS()))
-                    .topics(topic1, topic2).build());
+                    .topics(topic1, topic2)
+                    .sortRecords(ordered).build());
             tc.startConsumer();
             TestUtils.sleep(ONE_SECOND);
             TestProducer.produce(topic1, "t5a");
@@ -212,12 +233,12 @@ public class TestMultiConsumer {
             TestProducer.produce(topic1, "t6a");
             TestProducer.produce(topic1, "t6b");
 
-            await().atMost(FIVE_SECONDS).untilAtomic(tc.stats.recordCount, greaterThanOrEqualTo(3));
+            await().atMost(TEN_SECONDS).untilAtomic(tc.stats.recordCount, greaterThanOrEqualTo(3));
             TestUtils.sleep(TWO_SECONDS);
             ConsumerResult result = tc.stopConsumer();
 
             String actual = result
-                    .sorted() // no ordering guarantee for historical records and multiple topics/partitions
+                    .sorted(ordered)
                     .asText(VALUE);
             String expected = expected(testInfo);
             assertThat(actual).isEqualTo(expected);
@@ -235,10 +256,11 @@ public class TestMultiConsumer {
          * </pre>
          */
         @DisplayName("consumes historical records from beginning of stream")
-        @Test
-        void t2648(TestInfo testInfo) throws URISyntaxException, IOException {
-            String topic1 = createTopic("topic1", testInfo);
-            String topic2 = createTopic("topic2", testInfo);
+        @ParameterizedTest
+        @ValueSource(strings = {"true", "false"})
+        void t2648(Boolean ordered, TestInfo testInfo) throws URISyntaxException, IOException {
+            String topic1 = createTopic("topic1_" + UUID.randomUUID(), testInfo);
+            String topic2 = createTopic("topic2_" + UUID.randomUUID(), testInfo);
 
             TestProducer.produce(topic1, "t0");
             TestUtils.sleep(ONE_SECOND);
@@ -246,17 +268,18 @@ public class TestMultiConsumer {
             TestUtils.sleep(ONE_SECOND);
             TestConsumer tc = new TestConsumer(OptionBuilder.options()
                     .startConsumerLimit(Instant.now().minusMillis(TEN_SECONDS.getValueInMS()))
-                    .topics(topic1, topic2).build());
+                    .topics(topic1, topic2)
+                    .sortRecords(ordered).build());
             tc.startConsumer();
             TestUtils.sleep(ONE_SECOND);
             TestProducer.produce(topic2, "t3");
 
-            await().atMost(FIVE_SECONDS).untilAtomic(tc.stats.recordCount, greaterThanOrEqualTo(3));
+            await().atMost(TEN_SECONDS).untilAtomic(tc.stats.recordCount, greaterThanOrEqualTo(3));
             TestUtils.sleep(TWO_SECONDS);
             ConsumerResult result = tc.stopConsumer();
 
             String actual = result
-                    .sorted() // no ordering guarantee for historical records and multiple topics/partitions
+                    .sorted(ordered)
                     .asText(VALUE);
             String expected = expected(testInfo);
             assertThat(actual).isEqualTo(expected);
@@ -273,10 +296,11 @@ public class TestMultiConsumer {
          * </pre>
          */
         @DisplayName("consumes historical records within interval in the past")
-        @Test
-        void t4742(TestInfo testInfo) throws URISyntaxException, IOException {
-            String topic1 = createTopic("topic1", testInfo);
-            String topic2 = createTopic("topic2", testInfo);
+        @ParameterizedTest
+        @ValueSource(strings = {"true", "false"})
+        void t4742(Boolean ordered, TestInfo testInfo) throws URISyntaxException, IOException {
+            String topic1 = createTopic("topic1_" + UUID.randomUUID(), testInfo);
+            String topic2 = createTopic("topic2_" + UUID.randomUUID(), testInfo);
 
             TestProducer.produce(topic1, "t0");
             TestUtils.sleep(TWO_SECONDS);
@@ -287,7 +311,8 @@ public class TestMultiConsumer {
             TestConsumer tc = new TestConsumer(OptionBuilder.options()
                     .startConsumerLimit(Instant.now().minusMillis(FIVE_SECONDS.getValueInMS()))
                     .endConsumerLimit(Instant.now().minusMillis(THREE_SECONDS.getValueInMS()))
-                    .topics(topic1, topic2).build());
+                    .topics(topic1, topic2)
+                    .sortRecords(ordered).build());
             tc.startConsumer();
             TestUtils.sleep(ONE_SECOND);
             TestProducer.produce(topic2, "t7");
@@ -297,7 +322,7 @@ public class TestMultiConsumer {
             ConsumerResult result = tc.stopConsumer();
 
             String actual = result
-                    .sorted() // no ordering guarantee for historical records and multiple topics/partitions
+                    .sorted(ordered)
                     .asText(VALUE);
             String expected = expected(testInfo);
             assertThat(actual).isEqualTo(expected);
@@ -332,14 +357,16 @@ public class TestMultiConsumer {
         }
 
         @DisplayName("consumes historical records from multiple topics with multiple partitions each")
-        @Test
-        void t3475(TestInfo testInfo) throws URISyntaxException, IOException {
-            String topic1 = createTopic("topic1", testInfo, 5);
-            String topic2 = createTopic("topic2", testInfo, 5);
-            String topic3 = createTopic("topic3", testInfo, 5);
+        @ParameterizedTest
+        @ValueSource(strings = {"true", "false"})
+        void t3475(Boolean ordered, TestInfo testInfo) throws URISyntaxException, IOException {
+            String topic1 = createTopic("topic1_" + UUID.randomUUID(), testInfo, 5);
+            String topic2 = createTopic("topic2_" + UUID.randomUUID(), testInfo, 5);
+            String topic3 = createTopic("topic3_" + UUID.randomUUID(), testInfo, 5);
             TestConsumer tc = new TestConsumer(OptionBuilder.options()
                     .startConsumerLimit(Instant.now())
-                    .topics(topic1, topic2, topic3).build());
+                    .topics(topic1, topic2, topic3)
+                    .sortRecords(ordered).build());
 
             sleep(ONE_SECOND);
             TestProducer.produce(topic1, "val01", 4);
@@ -357,25 +384,26 @@ public class TestMultiConsumer {
 
             tc.startConsumer();
 
-            await().atMost(FIVE_SECONDS).untilAtomic(tc.stats.recordCount, greaterThanOrEqualTo(12));
+            await().atMost(TEN_SECONDS).untilAtomic(tc.stats.recordCount, greaterThanOrEqualTo(12));
             TestUtils.sleep(TWO_SECONDS);
             ConsumerResult result = tc.stopConsumer();
 
             String actual = result
-                    .sorted() // no ordering guarantee for historical records and multiple topics/partitions
+                    .sorted(ordered)
                     .asText(VALUE, PARTITION);
             String expected = expected(testInfo);
             assertThat(actual).isEqualTo(expected);
         }
 
         @DisplayName("consumes historical records (load test)")
-        @Test
-        void t7591(TestInfo testInfo) {
+        @ParameterizedTest
+        @ValueSource(strings = {"true", "false"})
+        void t7591(Boolean ordered, TestInfo testInfo) {
             List<String> topics = new ArrayList<>();
             int TOPIC_NO = 10;
             int PARTITION_NO = 3;
             for (int i = 0; i < TOPIC_NO; i++) {
-                topics.add(createTopic("topic" + i, testInfo, PARTITION_NO));
+                topics.add(createTopic("topic" + i + "_" + UUID.randomUUID(), testInfo, PARTITION_NO));
             }
 
             AtomicBoolean stopProducer = new AtomicBoolean();
@@ -394,22 +422,23 @@ public class TestMultiConsumer {
             TestUtils.sleep(TEN_SECONDS);
             TestConsumer tc = new TestConsumer(OptionBuilder.options()
                     .startConsumerLimit(now)
-                    .topics(topics).build());
+                    .topics(topics)
+                    .sortRecords(ordered).build());
             tc.startConsumer();
             TestUtils.sleep(TEN_SECONDS);
             stopProducer.set(true);
-            await().atMost(FIVE_SECONDS).until(producer::isDone);
+            await().atMost(TEN_SECONDS).until(producer::isDone);
             TestUtils.sleep(TWO_SECONDS);
             ConsumerResult result = tc.stopConsumer();
 
 
             Stream<String> values = result
-                    .sorted()   // no ordering guarantee for historical records and multiple topics/partitions
+                    .sorted(ordered)
                     .asValues();
             Stats stats = stats(values);
             org.assertj.core.api.Assertions.assertThat(stats.isContiguous).isTrue();
             org.assertj.core.api.Assertions.assertThat(stats.hasDuplicates).isFalse();
-            long minTimestamp = result.asTimestamps().mapToLong(Instant::toEpochMilli).min().getAsLong();
+            long minTimestamp = result.asTimestamps().mapToLong(Instant::toEpochMilli).min().orElse(-1);
             Assertions.assertThat(minTimestamp).isGreaterThanOrEqualTo(now.toEpochMilli());
         }
 

@@ -14,7 +14,7 @@ import java.util.concurrent.ExecutionException;
 
 public class TestProducerManualTests {
 
-    private static final int MAX_SECONDS = 8;
+    private static final double MAX_SECONDS = 0.1;
 
     public static void main(String[] args) {
         Properties props = new Properties();
@@ -37,7 +37,7 @@ public class TestProducerManualTests {
 
         try (KafkaProducer<String, String> producer = new KafkaProducer<>(props)) {
             for (int i = 0; ; i++) {
-                sleep((int) (Math.random() * MAX_SECONDS)*1000);
+                sleep((int) ((Math.random() * MAX_SECONDS)*1000));
                 String key = "key" + i;
                 String value = "val" + i;
                 producer.send(new ProducerRecord<>(

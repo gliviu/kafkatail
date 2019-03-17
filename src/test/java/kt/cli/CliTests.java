@@ -32,7 +32,7 @@ import static org.mockito.Mockito.*;
 @DisplayName("Cli")
 @ExtendWith(EmbeddedKafkaJunitExtension.class)
 @Execution(ExecutionMode.CONCURRENT)
-public class CliTests {
+class CliTests {
 
     static class Mocks {
         InfoPrinter infoPrinterMock = spy(new InfoPrinter());

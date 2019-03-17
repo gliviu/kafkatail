@@ -9,12 +9,13 @@ import java.time.format.DateTimeFormatter;
  * Date helper methods.
  */
 public class Dates {
+    private static DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
+
     static String localDateTime(Instant instant) {
         return localDateTime(LocalDateTime.ofInstant(instant, ZoneId.systemDefault()));
     }
 
     static String localDateTime(LocalDateTime localDateTime) {
-        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         return localDateTime.format(dateTimeFormatter);
     }
 }
