@@ -27,6 +27,7 @@ public class TestUtils {
 
     public static final Duration TEN_MILLISECONDS = new Duration(10, TimeUnit.MILLISECONDS);
     public static final Duration THREE_SECONDS = new Duration(3, TimeUnit.SECONDS);
+    public static final Duration THIRTY_SECONDS = new Duration(30, TimeUnit.SECONDS);
 
     public static String bootstrapServers() {
         return "localhost:9093";

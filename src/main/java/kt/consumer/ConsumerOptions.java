@@ -36,7 +36,10 @@ public class ConsumerOptions {
 
     void validate() {
         if(endConsumerLimit!=null && endConsumerLimit.isAfter(Instant.now())) {
-            throw new IllegalStateException("End consumer limit must be in the past");
+            throw new IllegalStateException("endConsumerLimit must be in the past");
+        }
+        if(startConsumerLimit!=null && fromBeginning){
+            throw new IllegalStateException("startConsumerLimit cannot be used with fromBeginning");
         }
     }
 
