@@ -48,9 +48,9 @@ class ManualTests {
         int PARTITION_NO = 10;
 
         // Consumer configuration
-        boolean READ_HISTORICAL_RECORDS_FROM_BEGINNING = false;
+        boolean READ_HISTORICAL_RECORDS_FROM_BEGINNING = true;
         boolean READ_HISTORICAL_RECORDS = false;
-        Duration READ_HISTORICAL_RECORDS_DELAY = ofSeconds(5);
+        Duration READ_HISTORICAL_RECORDS_DELAY = ofSeconds(50);
 
         Instant startTime = now();
         ManualTestProducer producer = new ManualTestProducer(BOOTSTRAP_SERVERS, TOPIC_NO, PARTITION_NO, READ_HISTORICAL_RECORDS_FROM_BEGINNING);
@@ -73,7 +73,7 @@ class ManualTests {
         AtomicLong consumedRecordCount = new AtomicLong(), orderMismatch = new AtomicLong();
         CompletableFuture.runAsync(() -> {
             try {
-                if (READ_HISTORICAL_RECORDS) {
+                if (READ_HISTORICAL_RECORDS || READ_HISTORICAL_RECORDS_FROM_BEGINNING) {
                     sleep(READ_HISTORICAL_RECORDS_DELAY);
                 }
                 consumer.start(options, event -> {/*ignore*/}, currentRecord -> {
@@ -96,7 +96,7 @@ class ManualTests {
         });
 
         while (Duration.between(startTime, now()).minus(RUN_TIME).isNegative()) {
-            sleep(ofSeconds(5));
+            sleep(ofSeconds(10));
             if (currentValue.get() == null) {
                 System.out.println("none");
                 continue;
