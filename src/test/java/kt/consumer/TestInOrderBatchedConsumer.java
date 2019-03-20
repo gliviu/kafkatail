@@ -281,12 +281,12 @@ class TestInOrderBatchedConsumer {
     }
 
     @Test
-    @DisplayName("keeps order as long as max time since last read is not exceeded")
+    @DisplayName("keeps order as long as 'max time since last read' is not exceeded")
     void t5139() {
         RecordsConsumerMock consumer = new RecordsConsumerMock();
         Limits limits = new Limits();
-        limits.maxTimeSinceLastRecord = Duration.ofMillis(200);
-        limits.maxTimeSinceBatchStart = Duration.ofSeconds(10000);
+        limits.maxTimeSinceLastRecord = Duration.ofMillis(1000);
+        limits.maxTimeSinceBatchStart = Duration.ofSeconds(100000);
         limits.maxRecordTotalSize = 100000;
         limits.maxRecordCount = 10000;
         InOrderBatchedConsumer orderedConsumer = new InOrderBatchedConsumer(limits, consumer);
@@ -295,7 +295,7 @@ class TestInOrderBatchedConsumer {
                 partition("t1", "p1", 2, 5),
                 partition("t1", "p2", 1, 4)
         ).forEach(orderedConsumer::acceptRecord);
-        TestUtils.sleep(Duration.ofMillis(150));
+        TestUtils.sleep(Duration.ofMillis(500));
         orderedConsumer.process();
         assertThat(consumer.records).isEmpty();
 
@@ -303,7 +303,7 @@ class TestInOrderBatchedConsumer {
                 partition("t1", "p1", 6, 8),
                 partition("t1", "p2", 5, 7)
         ).forEach(orderedConsumer::acceptRecord);
-        TestUtils.sleep(Duration.ofMillis(150));
+        TestUtils.sleep(Duration.ofMillis(500));
         orderedConsumer.process();
         assertThat(consumer.records).isEmpty();
 
@@ -311,11 +311,11 @@ class TestInOrderBatchedConsumer {
                 partition("t1", "p1", 10, 12),
                 partition("t1", "p2", 8, 9)
         ).forEach(orderedConsumer::acceptRecord);
-        TestUtils.sleep(Duration.ofMillis(150));
+        TestUtils.sleep(Duration.ofMillis(550));
         orderedConsumer.process();
         assertThat(consumer.records).isEmpty();
 
-        TestUtils.sleep(Duration.ofMillis(100));
+        TestUtils.sleep(Duration.ofMillis(1000));
         orderedConsumer.process();
         assertThat(consumer.records).isNotEmpty();
 
