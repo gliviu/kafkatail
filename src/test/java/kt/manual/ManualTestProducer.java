@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.awaitility.Awaitility.await;
-import static org.awaitility.Duration.FIVE_SECONDS;
+import static org.awaitility.Duration.TEN_SECONDS;
 
 public class ManualTestProducer {
 
@@ -117,7 +117,7 @@ public class ManualTestProducer {
             }
 
             if (createNewTopic) {
-                await().atMost(FIVE_SECONDS).until(() -> {
+                await().atMost(TEN_SECONDS).until(() -> {
                     try {
                         NewTopic topic = new NewTopic(topicName, numberOfPartitions, (short) 1);
                         CreateTopicsResult result = ac.createTopics(Collections.singletonList(topic));
