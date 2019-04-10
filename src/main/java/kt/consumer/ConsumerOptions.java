@@ -46,7 +46,7 @@ public class ConsumerOptions {
     /**
      * @return true if historical records are to be fetched.
      */
-    boolean shouldReadHistoricalRecords() {
+    public boolean shouldReadHistoricalRecords() {
         return startConsumerLimit != null || fromBeginning;
     }
 }

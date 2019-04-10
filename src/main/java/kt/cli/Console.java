@@ -18,6 +18,10 @@ public class Console {
         System.out.print(text);
     }
 
+    public static void print(char text) {
+        System.out.print(text);
+    }
+
     public static void moveCursorStart() {
         System.out.print(Ansi.ansi().cursorToColumn(1));
     }

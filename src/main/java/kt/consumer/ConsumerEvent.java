@@ -28,6 +28,21 @@ public enum ConsumerEvent {
      */
     CONSUMING_NEW_RECORDS,
     /**
+     * Polling for new records.
+     */
+    POLL_RECORDS,
+    /**
+     * Triggered when {@link InOrderBatchedConsumer} starts a new batch of ordered records.
+     * Note that it is possible that multiple start events to be
+     * triggered without a corresponding {@link ConsumerEvent#END_ORDERING_RECORDS}.
+     */
+    START_ORDERING_RECORDS,
+    /**
+     * Triggered when {@link InOrderBatchedConsumer} finished a batch of ordered records
+     * that are ready to be printed.
+     */
+    END_ORDERING_RECORDS,
+    /**
      * Consumer stopped.
      */
     END_CONSUME

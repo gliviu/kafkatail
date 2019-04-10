@@ -33,6 +33,18 @@ public enum CliEvent {
      */
     CONSUMING_NEW_RECORDS,
     /**
+     * {@link ConsumerEvent#POLL_RECORDS}
+     */
+    POLL_RECORDS,
+    /**
+     * {@link ConsumerEvent#START_ORDERING_RECORDS}
+     */
+    START_ORDERING_RECORDS,
+    /**
+     * {@link ConsumerEvent#END_ORDERING_RECORDS}
+     */
+    END_ORDERING_RECORDS,
+    /**
      * {@link ConsumerEvent#END_CONSUME}
      */
     END_CONSUME,

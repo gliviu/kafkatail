@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 import java.util.stream.StreamSupport;
 
 /**
@@ -71,12 +70,12 @@ class InOrderBatchedConsumer {
     private Stats stats = new Stats();
 
 
-    private Consumer<ConsumerRecord<String, String>> recordConsumer;
     private Limits limits;
+    private ConsumerContext context;
 
-    InOrderBatchedConsumer(Limits limits, Consumer<ConsumerRecord<String, String>> recordConsumer) {
+    InOrderBatchedConsumer(Limits limits, ConsumerContext context) {
         this.limits = limits;
-        this.recordConsumer = recordConsumer;
+        this.context = context;
     }
 
     /**
@@ -97,6 +96,7 @@ class InOrderBatchedConsumer {
      */
     void process() {
         if (recordsByPartition.isEmpty()) {
+            context.eventConsumer.accept(ConsumerEvent.START_ORDERING_RECORDS);
             return;
         }
         boolean exceedsSize = stats.recordsTotalSize > limits.maxRecordTotalSize;
@@ -104,9 +104,10 @@ class InOrderBatchedConsumer {
         boolean exceedsDelay = Duration.between(stats.lastRecordTime, Instant.now()).compareTo(limits.maxTimeSinceLastRecord) > 0;
         boolean exceedsRecordAccumulationInterval = Duration.between(stats.lastProcesstime, Instant.now()).compareTo(limits.maxTimeSinceBatchStart) > 0;
         if (exceedsCount || exceedsDelay || exceedsSize || exceedsRecordAccumulationInterval) {
+            context.eventConsumer.accept(ConsumerEvent.END_ORDERING_RECORDS);
             stats.lastProcesstime = Instant.now();
             Iterable<ConsumerRecord<String, String>> recordSorter = () -> new OrderedRecordIterator(recordsByPartition.values());
-            StreamSupport.stream(recordSorter.spliterator(), false).forEach(recordConsumer::accept);
+            StreamSupport.stream(recordSorter.spliterator(), false).forEach(context.recordConsumer::accept);
 
             // reset state
             recordsByPartition = new HashMap<>();

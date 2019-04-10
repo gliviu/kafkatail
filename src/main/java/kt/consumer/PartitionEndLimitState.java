@@ -17,7 +17,7 @@ import java.util.stream.StreamSupport;
 
 /**
  * One partition is said to have reached 'end limit' if it consumed all historical records and now
- * it waiting for new records to arrive.
+ * it waits for new records to arrive.
  */
 class PartitionEndLimitState {
 
