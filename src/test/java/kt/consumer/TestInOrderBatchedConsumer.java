@@ -31,12 +31,15 @@ class TestInOrderBatchedConsumer {
     @DisplayName("outputs data from one partition")
     void t3754() {
         RecordsConsumerMock consumer = new RecordsConsumerMock();
+        ConsumerContext context = new ConsumerContext();
+        context.recordConsumer = consumer;
+        context.eventConsumer = mockConsumerEventConsumer();
         Limits limits = new Limits();
         limits.maxTimeSinceLastRecord = Duration.ofSeconds(1);
         limits.maxTimeSinceBatchStart = Duration.ofSeconds(10);
         limits.maxRecordTotalSize = 1000;
         limits.maxRecordCount = 100;
-        InOrderBatchedConsumer orderedConsumer = new InOrderBatchedConsumer(limits, consumer);
+        InOrderBatchedConsumer orderedConsumer = new InOrderBatchedConsumer(limits, context);
 
         createRecords(partition("t1", "p1", 2, 4, 5, 7)).forEach(orderedConsumer::acceptRecord);
         TestUtils.sleep(Duration.ofMillis(100));
@@ -52,13 +55,16 @@ class TestInOrderBatchedConsumer {
     @Test
     @DisplayName("outputs sorted data from one topic, multiple partition")
     void t2468() {
+        ConsumerContext context = new ConsumerContext();
         RecordsConsumerMock consumer = new RecordsConsumerMock();
+        context.recordConsumer = consumer;
+        context.eventConsumer = mockConsumerEventConsumer();
         Limits limits = new Limits();
         limits.maxTimeSinceLastRecord = Duration.ofSeconds(1);
         limits.maxTimeSinceBatchStart = Duration.ofSeconds(10);
         limits.maxRecordTotalSize = 1000;
         limits.maxRecordCount = 100;
-        InOrderBatchedConsumer orderedConsumer = new InOrderBatchedConsumer(limits, consumer);
+        InOrderBatchedConsumer orderedConsumer = new InOrderBatchedConsumer(limits, context);
 
         createRecords(
                 partition("t1", "p1", 2, 4, 5, 7),
@@ -78,12 +84,15 @@ class TestInOrderBatchedConsumer {
     @DisplayName("outputs sorted data from multiple topics, multiple partitions")
     void t4267() {
         RecordsConsumerMock consumer = new RecordsConsumerMock();
+        ConsumerContext context = new ConsumerContext();
+        context.recordConsumer = consumer;
+        context.eventConsumer = mockConsumerEventConsumer();
         Limits limits = new Limits();
         limits.maxTimeSinceLastRecord = Duration.ofSeconds(1);
         limits.maxTimeSinceBatchStart = Duration.ofSeconds(10);
         limits.maxRecordTotalSize = 1000;
         limits.maxRecordCount = 100;
-        InOrderBatchedConsumer orderedConsumer = new InOrderBatchedConsumer(limits, consumer);
+        InOrderBatchedConsumer orderedConsumer = new InOrderBatchedConsumer(limits, context);
 
         createRecords(
                 partition("t1", "p1", 2, 5, 7),
@@ -104,12 +113,15 @@ class TestInOrderBatchedConsumer {
     @DisplayName("accumulates multiple data series before sorting")
     void t3495() {
         RecordsConsumerMock consumer = new RecordsConsumerMock();
+        ConsumerContext context = new ConsumerContext();
+        context.recordConsumer = consumer;
+        context.eventConsumer = mockConsumerEventConsumer();
         Limits limits = new Limits();
         limits.maxTimeSinceLastRecord = Duration.ofSeconds(1);
         limits.maxTimeSinceBatchStart = Duration.ofSeconds(10);
         limits.maxRecordTotalSize = 1000;
         limits.maxRecordCount = 100;
-        InOrderBatchedConsumer orderedConsumer = new InOrderBatchedConsumer(limits, consumer);
+        InOrderBatchedConsumer orderedConsumer = new InOrderBatchedConsumer(limits, context);
 
         createRecords(
                 partition("t1", "p1", 2, 7),
@@ -134,12 +146,15 @@ class TestInOrderBatchedConsumer {
     @DisplayName("breaks order if last record max interval is exceeded")
     void t3548() {
         RecordsConsumerMock consumer = new RecordsConsumerMock();
+        ConsumerContext context = new ConsumerContext();
+        context.recordConsumer = consumer;
+        context.eventConsumer = mockConsumerEventConsumer();
         Limits limits = new Limits();
         limits.maxTimeSinceLastRecord = Duration.ofMillis(200);
         limits.maxTimeSinceBatchStart = Duration.ofSeconds(10000);
         limits.maxRecordTotalSize = 1000;
         limits.maxRecordCount = 100;
-        InOrderBatchedConsumer orderedConsumer = new InOrderBatchedConsumer(limits, consumer);
+        InOrderBatchedConsumer orderedConsumer = new InOrderBatchedConsumer(limits, context);
 
         createRecords(
                 partition("t1", "p1", 2, 7),
@@ -171,12 +186,15 @@ class TestInOrderBatchedConsumer {
     @DisplayName("breaks order if max batch interval is exceeded")
     void t4768() {
         RecordsConsumerMock consumer = new RecordsConsumerMock();
+        ConsumerContext context = new ConsumerContext();
+        context.recordConsumer = consumer;
+        context.eventConsumer = mockConsumerEventConsumer();
         Limits limits = new Limits();
         limits.maxTimeSinceLastRecord = Duration.ofSeconds(10000);
         limits.maxTimeSinceBatchStart = Duration.ofMillis(200);
         limits.maxRecordTotalSize = 1000;
         limits.maxRecordCount = 100;
-        InOrderBatchedConsumer orderedConsumer = new InOrderBatchedConsumer(limits, consumer);
+        InOrderBatchedConsumer orderedConsumer = new InOrderBatchedConsumer(limits, context);
 
         createRecords(
                 partition("t1", "p1", 2, 7),
@@ -207,12 +225,15 @@ class TestInOrderBatchedConsumer {
     @DisplayName("breaks order if max records is exceeded")
     void t3451() {
         RecordsConsumerMock consumer = new RecordsConsumerMock();
+        ConsumerContext context = new ConsumerContext();
+        context.recordConsumer = consumer;
+        context.eventConsumer = mockConsumerEventConsumer();
         Limits limits = new Limits();
         limits.maxTimeSinceLastRecord = Duration.ofSeconds(2000);
         limits.maxTimeSinceBatchStart = Duration.ofSeconds(1000);
         limits.maxRecordTotalSize = 10000000;
         limits.maxRecordCount = 3;
-        InOrderBatchedConsumer orderedConsumer = new InOrderBatchedConsumer(limits, consumer);
+        InOrderBatchedConsumer orderedConsumer = new InOrderBatchedConsumer(limits, context);
 
         createRecords(
                 partition("t1", "p1", 2, 7)
@@ -246,12 +267,15 @@ class TestInOrderBatchedConsumer {
     @DisplayName("breaks order if max records size is exceeded")
     void t3254() {
         RecordsConsumerMock consumer = new RecordsConsumerMock();
+        ConsumerContext context = new ConsumerContext();
+        context.recordConsumer = consumer;
+        context.eventConsumer = mockConsumerEventConsumer();
         Limits limits = new Limits();
         limits.maxTimeSinceLastRecord = Duration.ofSeconds(2000);
         limits.maxTimeSinceBatchStart = Duration.ofSeconds(1000);
-        limits.maxRecordTotalSize = 3*9; // each record has 9 characters
+        limits.maxRecordTotalSize = 3 * 9; // each record has 9 characters
         limits.maxRecordCount = 100000;
-        InOrderBatchedConsumer orderedConsumer = new InOrderBatchedConsumer(limits, consumer);
+        InOrderBatchedConsumer orderedConsumer = new InOrderBatchedConsumer(limits, context);
 
         createRecords(
                 partition("t1", "p1", 2, 4)
@@ -284,12 +308,15 @@ class TestInOrderBatchedConsumer {
     @DisplayName("keeps order as long as 'max time since last read' is not exceeded")
     void t5139() {
         RecordsConsumerMock consumer = new RecordsConsumerMock();
+        ConsumerContext context = new ConsumerContext();
+        context.recordConsumer = consumer;
+        context.eventConsumer = mockConsumerEventConsumer();
         Limits limits = new Limits();
         limits.maxTimeSinceLastRecord = Duration.ofMillis(1000);
         limits.maxTimeSinceBatchStart = Duration.ofSeconds(100000);
         limits.maxRecordTotalSize = 100000;
         limits.maxRecordCount = 10000;
-        InOrderBatchedConsumer orderedConsumer = new InOrderBatchedConsumer(limits, consumer);
+        InOrderBatchedConsumer orderedConsumer = new InOrderBatchedConsumer(limits, context);
 
         createRecords(
                 partition("t1", "p1", 2, 5),
@@ -327,12 +354,15 @@ class TestInOrderBatchedConsumer {
     @DisplayName("accepts empty record set")
     void t2975() {
         RecordsConsumerMock consumer = new RecordsConsumerMock();
+        ConsumerContext context = new ConsumerContext();
+        context.recordConsumer = consumer;
+        context.eventConsumer = mockConsumerEventConsumer();
         Limits limits = new Limits();
         limits.maxTimeSinceLastRecord = Duration.ofMillis(200);
         limits.maxTimeSinceBatchStart = Duration.ofSeconds(10000);
         limits.maxRecordTotalSize = 100000;
         limits.maxRecordCount = 10000;
-        InOrderBatchedConsumer orderedConsumer = new InOrderBatchedConsumer(limits, consumer);
+        InOrderBatchedConsumer orderedConsumer = new InOrderBatchedConsumer(limits, context);
 
         createRecords(
                 partition("t1", "p1", 2, 5),
@@ -381,4 +411,9 @@ class TestInOrderBatchedConsumer {
         return records;
     }
 
+    private Consumer<ConsumerEvent> mockConsumerEventConsumer() {
+        return (event) -> {
+            // ignore
+        };
+    }
 }
