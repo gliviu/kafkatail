@@ -65,6 +65,9 @@ class PartitionEndLimitState {
     @InternalState
     private boolean reachedEndLimit = false;
 
+    @InternalState
+    private long recordCount;
+
     /**
      * @return true if all partitions reached end limit.
      */
@@ -88,6 +91,8 @@ class PartitionEndLimitState {
             return;
         }
 
+        recordCount += records.count();
+
         Map<TopicPartition, Long> partitionToMaxOffset = StreamSupport.stream(records.spliterator(), false).collect(Collectors.toMap(
                 record -> new TopicPartition(record.topic(), record.partition()),
                 ConsumerRecord::offset,
@@ -107,6 +112,9 @@ class PartitionEndLimitState {
         if (historicalPartitionsCount == 0) {
             reachedEndLimit = true;
             partitionEndLimitStates = null;
+            if (recordCount == 0) {
+                eventConsumer.accept(ConsumerEvent.NO_HISTORICAL_RECORDS_AVAILABLE);
+            }
             if (options.endConsumerLimit != null) {
                 eventConsumer.accept(ConsumerEvent.REACHED_END_CONSUMER_LIMIT);
             } else if (options.startConsumerLimit != null || options.fromBeginning) {

@@ -20,6 +20,10 @@ public enum ConsumerEvent {
      */
     START_CONSUME,
     /**
+     * No historical records were retrieved.
+     */
+    NO_HISTORICAL_RECORDS_AVAILABLE,
+    /**
      * Consumer end limit reached. Stop consumer.
      */
     REACHED_END_CONSUMER_LIMIT,

@@ -34,6 +34,9 @@ class InfoPrinter {
                 awake();
                 printInfo(consumerOptions, cliOptions);
                 break;
+            case NO_HISTORICAL_RECORDS_AVAILABLE:
+                println(warn("No historical records available"));
+                break;
             case REACHED_END_CONSUMER_LIMIT:
                 println(warn("Reached consumer end limit " + localDateTime(consumerOptions.endConsumerLimit)));
                 break;
