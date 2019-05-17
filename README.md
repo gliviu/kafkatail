@@ -9,7 +9,7 @@ Building and running requires [Jdk 8+](https://www.oracle.com/technetwork/java/j
 
 **Binary release**  
 Binaries are available at [GitHub Release](https://github.com/gliviu/kafkatail/releases) page.
-Download, unpack and add `kafkatail-0.1.3/bin` directory to `PATH`.  
+Download, unpack and add `kafkatail-1.0.0/bin` directory to `PATH`.  
 Run `kafkatail -v` to check installation.
 
 **Nodejs package**  
@@ -23,8 +23,8 @@ Upon first run it might download a local copy of JRE if `java` executable is not
 git clone https://github.com/gliviu/kafkatail
 cd kafkatail
 ./gradlew build
-unzip build/distributions/kafkatail-0.1.3.zip
-kafkatail-0.1.3/bin/kafkatail -v   # or kafkatail.bat -v
+unzip build/distributions/kafkatail-1.0.0.zip
+kafkatail-1.0.0/bin/kafkatail -v   # or kafkatail.bat -v
 ```
 
 ## Usage

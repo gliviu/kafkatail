@@ -1,6 +1,6 @@
 {
   "name": "kafkatail",
-  "version": "0.1.3",
+  "version": "1.0.0",
   "description": "Multi topic tail for kafka brokers",
   "main": "index.js",
   "author": "Liviu Grigorescu",
