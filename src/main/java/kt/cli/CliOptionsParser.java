@@ -11,10 +11,9 @@ import static java.util.Arrays.asList;
 import static kt.cli.Console.*;
 
 class CliOptionsParser {
-    private OptionParser parser;
 
     CliOptions parse(String... args) {
-        parser = new OptionParser();
+        OptionParser parser = new OptionParser();
         OptionSpec<String> brokerSpec = parser.accepts("b")
                 .withRequiredArg().ofType(String.class);
         OptionSpec<String> excludeTopicsSpec = parser.accepts("x")
@@ -64,7 +63,6 @@ class CliOptionsParser {
                 "-s --since date     Print previous records starting from date%n" +
                 "-u --until date     Consume records until date is reached%n" +
                 "-a --amount amount  Consume certain amount of records starting with -s, then stop%n" +
-                warn("-s -u -a are experimental and might not work as expected%n") +
                 "%n" +
                 bold("Topic selection%n") +
                 "Topic names are matched by substring.%n" +

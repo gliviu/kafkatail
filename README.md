@@ -1,24 +1,24 @@
 
-# kafka-tail
-Multi topic tail for kafka brokers.  
-Supports topic selction and exclusion by pattern. Tailing historical records is allowed but still experimental due to some [limitations](#notes).  
+# kafkatail
+Tail for kafka brokers with support for multiple topic selection.  
 Building and running requires [Jdk 8+](https://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html).
 
 [![Build Status](https://api.travis-ci.org/gliviu/kafkatail.svg?branch=master)](https://travis-ci.org/gliviu/kafkatail)
 
-# Install
+## Install
 
 **Binary release**  
-Binaries are available at [GitHub Releases](https://github.com/gliviu/kafkatail/releases).
+Binaries are available at [GitHub Release](https://github.com/gliviu/kafkatail/releases) page.
+Download, unpack and add `kafkatail-0.1.3/bin` directory to `PATH`.  
+Run `kafkatail -v` to check installation.
 
-**Node Js**
+**Nodejs package**  
 
-```bash
-npm install -g kafkatail
-```
-The [app](https://www.npmjs.com/package/kafkatail) will automatically install a JRE if `java` is not available.
+NodeJs [kafkatail](https://www.npmjs.com/package/kafkatail) package can be installed using `npm install -g kafkatail`.  
+Use `kafkatail -v` to check successful deployment.  
+Upon first run it might download a local copy of JRE if `java` executable is not available. See [jdeploy](https://github.com/shannah/jdeploy) and [node-jre](https://www.npmjs.com/package/node-jre).
 
-**From source**
+**Install from source**  
 ```bash
 git clone https://github.com/gliviu/kafkatail
 cd kafkatail
@@ -27,7 +27,7 @@ unzip build/distributions/kafkatail-0.1.3.zip
 kafkatail-0.1.3/bin/kafkatail -v   # or kafkatail.bat -v
 ```
 
-# Usage
+## Usage
 ```
 Usage: kafkatail [options] [--] [topic-pattern1 topic-pattern2 ...]             
 
@@ -44,7 +44,6 @@ Options
 -s --since date     Print previous records starting from date
 -u --until date     Consume records until date is reached
 -a --amount amount  Consume certain amount of records starting with -s, then stop
--s -u -a are experimental and might not work as expected
 
 Topic selection
 Topic names are matched by substring.
@@ -74,5 +73,3 @@ Options -u and -a cannot be used together.
 * No consumer group is created on broker while tailing
 * Offset range options (-s, -u, -a) do not work well with records that don't have a timestamp attached.  
   Use producer starting with [0.10.0.0](https://mvnrepository.com/artifact/org.apache.kafka/kafka-clients/0.10.0.0) to benefit from these options. See [KIP-32](https://cwiki.apache.org/confluence/display/KAFKA/KIP-32+-+Add+timestamps+to+Kafka+message).
-* Offset range options (-s, -u, -a) might print records out of order if multiple partitions or topics are tailed.  
-  This is also true when reading new records but can generally happen when records are produces with high frequency.
